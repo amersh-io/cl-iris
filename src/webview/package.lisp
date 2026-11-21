@@ -32,6 +32,7 @@
            #:go-forward
            #:focus-webview
            #:webview-focused-p
+           #:focus-parent
            #:eval-js
            #:javascript-error
            #:request

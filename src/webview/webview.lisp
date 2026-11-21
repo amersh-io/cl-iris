@@ -51,6 +51,11 @@ height) in points from the top-left corner of the content area."
   "Give WEBVIEW the keyboard focus within its window."
   (on-main (lambda () (send (send webview "window") "makeFirstResponder:" :pointer webview :bool))))
 
+(defun focus-parent (webview)
+  "Take the keyboard focus away from WEBVIEW, back to its window."
+  (on-main (lambda () (send (send webview "window") "makeFirstResponder:"
+                            :pointer (cffi:null-pointer) :bool))))
+
 (defun webview-focused-p (webview)
   "True if WEBVIEW, or a view inside it, has its window's keyboard focus."
   (on-main

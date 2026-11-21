@@ -450,6 +450,10 @@ small page; return the port."
                            (and (webview-focused-p left) (not (webview-focused-p right))))
                     (progn (focus-webview right)
                            (and (webview-focused-p right) (not (webview-focused-p left))))))
+        (check "focus-parent hands the focus back to the window"
+               (progn (focus-webview left)
+                      (focus-parent left)
+                      (not (webview-focused-p left))))
         (check "a webview made with :focused takes the focus"
                (let ((third (make-webview panes :bounds '(0 0 10 10) :focused t)))
                  (prog1 (and (webview-focused-p third) (not (webview-focused-p right)))

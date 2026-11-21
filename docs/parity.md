@@ -66,7 +66,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `bounds`, `set_bounds` | `webview-bounds`, `(setf webview-bounds)` | done | "a webview can be moved and resized" |
 | `set_visible` | `(setf webview-visible-p)` | done | "a hidden webview can be shown" |
 | `focus` | `focus-webview`, `webview-focused-p` | done | "focus moves between webviews" |
-| `focus_parent` | `focus-window` (window layer) | planned | |
+| `focus_parent` | `focus-parent` | done | "focus-parent hands the focus back to the window" |
 | `print` | `print-webview` | planned | |
 | `cookies`, `cookies_for_url`, `set_cookie`, `delete_cookie` | `cookies`, `set-cookie`, `delete-cookie` | planned | |
 | `clear_all_browsing_data` | `clear-browsing-data` | planned | |
