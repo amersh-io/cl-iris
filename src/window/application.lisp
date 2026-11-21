@@ -16,7 +16,7 @@
 
 (defun run-application (&key on-launch (activation-policy :regular)
                           (on-quit-request (constantly t)) on-reopen
-                          quit-on-last-window-closed)
+                          quit-on-last-window-closed (menu-bar :default))
   "Run the Cocoa application on the main thread until STOP-APPLICATION.
 ON-LAUNCH, if given, is called on the main thread once the loop is running.
 ACTIVATION-POLICY is :REGULAR, :ACCESSORY (no Dock icon) or :PROHIBITED.
@@ -27,6 +27,9 @@ never exits behind Lisp's back. ON-REOPEN is called with whether any window
 is visible when the user clicks the Dock icon. With
 QUIT-ON-LAST-WINDOW-CLOSED, closing the last window counts as a request to
 quit.
+
+MENU-BAR is :DEFAULT for DEFAULT-MENU-BAR, a description for SET-MENU-BAR,
+or NIL to install none.
 
 Must be called on the main thread."
   (unless (main-thread-p)
@@ -50,6 +53,8 @@ Must be called on the main thread."
                (send app "setActivationPolicy:"
                      :long (activation-policy-value activation-policy) :bool)
                (send app "setDelegate:" :pointer delegate :void)
+               (when menu-bar
+                 (install-menu-bar (if (eq menu-bar :default) (default-menu-bar) menu-bar)))
                (when on-launch
                  (on-main on-launch :wait nil))
                (unwind-protect (send app "run" :void)

@@ -39,12 +39,12 @@
                (:file "dispatch")
                (:file "timers")
                (:file "app-delegate")
+               (:file "menu")
                (:file "application")
                (:file "color")
                (:file "attributes")
                (:file "events")
-               (:file "window")
-               (:file "menu")))
+               (:file "window")))
 
 (defsystem "cl-iris/webview"
   :description "WKWebView with JavaScript <-> Lisp messaging and custom URL schemes."

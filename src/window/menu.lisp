@@ -176,3 +176,51 @@ thread."
                (send menu "performActionForItemAtIndex:"
                      :long (send menu "indexOfItem:" :pointer item :long) :void))))
   nil)
+
+;;; The standard menu bar
+
+(defun application-name ()
+  "The application's name: the bundle's name when running from a .app,
+otherwise the process name."
+  (on-main
+   (lambda ()
+     (let* ((bundle (send (find-class* "NSBundle") "mainBundle"))
+            (name (send bundle "objectForInfoDictionaryKey:" :pointer (ns-string "CFBundleName"))))
+       (lisp-string (if (cffi:null-pointer-p name)
+                        (send (send (find-class* "NSProcessInfo") "processInfo") "processName")
+                        name))))))
+
+(defun default-menu-bar (&key (name (application-name)))
+  "The menu bar every Mac application has: the application menu (About,
+Hide, Quit), Edit, View and Window. The Edit menu is what makes Cmd+C,
+Cmd+V, Cmd+A and undo work in a webview. Extend or replace parts of it
+before giving it to SET-MENU-BAR."
+  `((:menu ,name
+     (:item ,(format nil "About ~A" name) :selector "orderFrontStandardAboutPanel:")
+     :separator
+     (:item ,(format nil "Hide ~A" name) :key "h" :selector "hide:")
+     (:item "Hide Others" :key "h" :modifiers (:command :option)
+            :selector "hideOtherApplications:")
+     (:item "Show All" :selector "unhideAllApplications:")
+     :separator
+     (:item ,(format nil "Quit ~A" name) :key "q" :selector "terminate:"))
+    (:menu "Edit"
+     (:item "Undo" :key "z" :selector "undo:")
+     (:item "Redo" :key "z" :modifiers (:command :shift) :selector "redo:")
+     :separator
+     (:item "Cut" :key "x" :selector "cut:")
+     (:item "Copy" :key "c" :selector "copy:")
+     (:item "Paste" :key "v" :selector "paste:")
+     (:item "Paste and Match Style" :key "v" :modifiers (:command :option :shift)
+            :selector "pasteAsPlainText:")
+     (:item "Delete" :selector "delete:")
+     (:item "Select All" :key "a" :selector "selectAll:"))
+    (:menu "View"
+     (:item "Enter Full Screen" :key "f" :modifiers (:command :control)
+            :selector "toggleFullScreen:"))
+    (:menu "Window"
+     (:item "Minimize" :key "m" :selector "performMiniaturize:")
+     (:item "Zoom" :selector "performZoom:")
+     (:item "Close" :key "w" :selector "performClose:")
+     :separator
+     (:item "Bring All to Front" :selector "arrangeInFront:"))))

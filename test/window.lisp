@@ -193,6 +193,7 @@ AppKit animates."
     (close-window window))
   (window-event-checks)
   (timer-checks)
+  (default-menu-checks)
   (menu-checks)
   (let ((window (make-window :title "minimize and zoom" :width 300 :height 200 :activate nil)))
     (check "a window can be minimized and restored"
@@ -265,6 +266,29 @@ AppKit animates."
                (setf *error-reporter* old))))
     (check "finished and cancelled timers leave no handles behind"
            (eventually (lambda () (= before (handle-count)))))))
+
+(defun default-menu-checks ()
+  "Checks of the menu bar RUN-APPLICATION installs; run before anything
+replaces it."
+  (flet ((item-is (path key selector)
+           (let ((item (apply #'find-menu-item path)))
+             (and item
+                  (on-main (lambda ()
+                             (and (string= key (lisp-string (send item "keyEquivalent")))
+                                  (cffi:pointer-eq (selector selector) (send item "action")))))))))
+    (check "the default menu bar has an Edit menu for copy and paste"
+           (and (item-is '("Edit" "Copy") "c" "copy:")
+                (item-is '("Edit" "Paste") "v" "paste:")
+                (item-is '("Edit" "Cut") "x" "cut:")
+                (item-is '("Edit" "Select All") "a" "selectAll:")
+                (item-is '("Edit" "Undo") "z" "undo:")))
+    (check "the default application menu quits through the quit request"
+           (item-is (list (application-name) (format nil "Quit ~A" (application-name)))
+                    "q" "terminate:"))
+    (check "the Window menu is the application's windows menu"
+           (on-main (lambda ()
+                      (string= "Window" (lisp-string (send (send (cl-iris/window::app) "windowsMenu")
+                                                           "title"))))))))
 
 (defun menu-checks ()
   (let ((chosen '()))

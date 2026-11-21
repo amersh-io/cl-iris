@@ -68,4 +68,6 @@
            #:find-menu-item
            #:menu-item-enabled-p
            #:menu-item-checked-p
-           #:perform-menu-item))
+           #:perform-menu-item
+           #:application-name
+           #:default-menu-bar))
