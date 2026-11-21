@@ -40,7 +40,10 @@ NIL, all media waits for one. With INCOGNITO, cookies, storage and caches
 stay in memory, apart from other webviews. With JAVASCRIPT NIL, pages run no
 scripts of their own (EVAL-JS and init scripts still run).
 BACKGROUND-THROTTLING is :SUSPEND, :THROTTLE or :NONE: what happens to the
-page while it is not visible (macOS 14 and later).
+page while it is not visible (macOS 14 and later). PROXY, (:HTTP host port)
+or (:SOCKS5 host port), routes the webview's traffic through a proxy (macOS
+14 and later); it applies to the webview's data store, which every
+non-INCOGNITO webview shares.
 
 INIT-SCRIPTS run at the start of every document, before the page's own
 scripts: each is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T).

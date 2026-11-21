@@ -19,6 +19,51 @@
                          (cons "X-Echo-Header" (or (request-header request "x-test") "")))))
           (t nil))))
 
+;;; A tiny HTTP proxy, to see a webview's traffic really go through one.
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (require :sb-bsd-sockets))
+
+(defvar *proxied-lines* '()
+  "The request lines the test proxy saw, newest first.")
+
+(defun read-head (stream)
+  (loop for line = (string-right-trim '(#\Return) (read-line stream nil ""))
+        until (string= line "") collect line))
+
+(defun crlf-format (stream control &rest arguments)
+  (write-string (substitute #\Return #\| (apply #'format nil control arguments)) stream)
+  (finish-output stream))
+
+(defun serve-proxied (client)
+  (let ((stream (sb-bsd-sockets:socket-make-stream
+                 client :input t :output t :element-type 'character
+                        :external-format :latin-1 :buffering :full)))
+    (unwind-protect
+         (ignore-errors
+          (let ((head (read-head stream)))
+            (push (first head) *proxied-lines*)
+            (when (eql 0 (search "CONNECT" (first head)))
+              (crlf-format stream "HTTP/1.1 200 Connection established|~%|~%")
+              (push (first (read-head stream)) *proxied-lines*))
+            (let ((body "<title>proxied</title>"))
+              (crlf-format stream "HTTP/1.1 200 OK|~%Content-Type: text/html|~%~
+                                   Content-Length: ~D|~%Connection: close|~%|~%~A"
+                           (length body) body))))
+      (ignore-errors (close stream)))))
+
+(defun start-test-proxy ()
+  "Listen on a free local port and answer every request through it with a
+small page; return the port."
+  (let ((socket (make-instance 'sb-bsd-sockets:inet-socket :type :stream :protocol :tcp)))
+    (sb-bsd-sockets:socket-bind socket #(127 0 0 1) 0)
+    (sb-bsd-sockets:socket-listen socket 5)
+    (sb-thread:make-thread
+     (lambda ()
+       (loop (serve-proxied (sb-bsd-sockets:socket-accept socket))))
+     :name "cl-iris test proxy")
+    (nth-value 1 (sb-bsd-sockets:socket-name socket))))
+
 (defvar *late-bound-messages* '())
 
 (defun late-bound-handler (message)
@@ -351,6 +396,24 @@
       (check "an unknown background throttling policy is refused"
              (handler-case (progn (make-webview window :background-throttling :sometimes) nil)
                (error (e) (search "SOMETIMES" (princ-to-string e)))))
+      (let ((http (make-webview window :incognito t :proxy '(:http "127.0.0.1" 3128)))
+            (socks (make-webview window :incognito t :proxy '(:socks5 "127.0.0.1" 1080))))
+        (check "an HTTP proxy is set on the webview's store"
+               (= 1 (webview-proxy-count http)))
+        (check "a SOCKS5 proxy is set on the webview's store"
+               (= 1 (webview-proxy-count socks)))
+        (destroy-webview http)
+        (destroy-webview socks))
+      (let* ((port (start-test-proxy))
+             (other (make-webview window :incognito t :proxy (list :http "127.0.0.1" port)
+                                         :url "http://proxied.invalid/")))
+        (check "a webview's requests really go through its proxy"
+               (and (wait-until (lambda () (equal "proxied" (eval-js other "document.title"))))
+                    (find "CONNECT proxied.invalid:80" *proxied-lines*
+                          :test (lambda (prefix line) (eql 0 (search prefix line))))))
+        (destroy-webview other))
+      (check "webviews have no proxy by default"
+             (zerop (webview-proxy-count webview)))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

@@ -197,3 +197,48 @@ from every other webview, and forgets them when it goes."
        (when (responds-to-p preferences "inactiveSchedulingPolicy")
          (car (rassoc (send preferences "inactiveSchedulingPolicy" :long)
                       *scheduling-policies*)))))))
+
+;;; Proxies (macOS 14 and later)
+
+(cffi:define-foreign-library network
+  (:darwin "/System/Library/Frameworks/Network.framework/Network"))
+
+(cffi:use-foreign-library network)
+
+(defun proxy-configuration (proxy)
+  "A retained nw_proxy_config_t for PROXY, (:HTTP host port) or
+(:SOCKS5 host port)."
+  (destructuring-bind (kind host port) proxy
+    (let ((endpoint (cffi:foreign-funcall "nw_endpoint_create_host"
+                                          :string host :string (princ-to-string port)
+                                          :pointer)))
+      (unwind-protect
+           (ecase kind
+             (:http (cffi:foreign-funcall "nw_proxy_config_create_http_connect"
+                                          :pointer endpoint :pointer (cffi:null-pointer)
+                                          :pointer))
+             (:socks5 (cffi:foreign-funcall "nw_proxy_config_create_socksv5"
+                                            :pointer endpoint :pointer)))
+        (release endpoint)))))
+
+;; Defined after :INCOGNITO, so that it applies to the store that one chose.
+(define-configuration-option :proxy (configuration proxy)
+  (when proxy
+    (let ((store (send configuration "websiteDataStore")))
+      (unless (responds-to-p store "setProxyConfigurations:")
+        (error "A proxy needs macOS 14 or later."))
+      (let ((proxy-configuration (proxy-configuration proxy)))
+        (send store "setProxyConfigurations:"
+              :pointer (send (find-class* "NSArray") "arrayWithObject:"
+                             :pointer proxy-configuration)
+              :void)
+        (release proxy-configuration)))))
+
+(defun webview-proxy-count (webview)
+  "How many proxies the data store of WEBVIEW routes through."
+  (on-main
+   (lambda ()
+     (let ((store (send (configuration webview) "websiteDataStore")))
+       (if (responds-to-p store "proxyConfigurations")
+           (send (send store "proxyConfigurations") "count" :unsigned-long)
+           0)))))

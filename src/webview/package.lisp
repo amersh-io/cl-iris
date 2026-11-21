@@ -20,6 +20,7 @@
            #:webview-autoplay-p
            #:webview-incognito-p
            #:webview-background-throttling
+           #:webview-proxy-count
            #:eval-js
            #:javascript-error
            #:request
