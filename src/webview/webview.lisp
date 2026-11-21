@@ -72,89 +72,75 @@ height) in points from the top-left corner of the content area."
                      &key on-message (scheme "iris") on-request protocols url headers html
                        (base-url "about:blank")
                      &allow-other-keys)
-  "Fill WINDOW with a new WKWebView and return it -- or, with BOUNDS, a list
-(x y width height) in points from the top-left corner of the window's content
-area, place it there, beside any other webviews in WINDOW.
+  "Make a WKWebView in WINDOW and return it. Every option is a keyword;
+handlers are called on the main thread, and an error in one is reported
+with REPORT-ERROR rather than reaching WebKit.
 
-ON-MESSAGE is called on the main thread with each value a page posts with
-iris.post(value) (or window.webkit.messageHandlers.iris.postMessage),
-converted with OBJC->LISP.
+Placement and content
+  BOUNDS       (x y width height) in points from the top-left of the window's
+               content area, beside other webviews; without it, the webview
+               fills the window.
+  URL          loaded first, with HEADERS (an alist); or else
+  HTML         a string shown as if loaded from BASE-URL.
+  INIT-SCRIPTS run at the start of every document, before the page's own
+               scripts: each a string, run in every frame, or
+               (STRING :MAIN-FRAME-ONLY T).
 
-ON-INVOKE answers iris.invoke(value), which returns a Promise: it is called
-on the main thread with the value and returns the answer, converted with
-LISP->OBJC; an error it signals rejects the Promise with its message. With
-INVOKE-ASYNC, ON-INVOKE is called with the value and a function of
-(ANSWER &key ERROR) to call once, later, from any thread.
+Talking to the page (window.iris in every frame)
+  ON-MESSAGE   called with each value of iris.post(value), converted with
+               OBJC->LISP.
+  ON-INVOKE    answers iris.invoke(value), a Promise: called with the value,
+               returns the answer (converted with LISP->OBJC); an error rejects
+               the Promise. With INVOKE-ASYNC it is called with the value and a
+               function of (ANSWER &key ERROR) to call once, from any thread.
+  PROTOCOLS    custom URL schemes, each (SCHEME HANDLER &key ASYNC). HANDLER
+               gets a REQUEST and returns the body (string or octets) and
+               optionally a content type, a status and headers (an alist); NIL
+               answers 404. With ASYNC it gets the REQUEST and a RESPONDER and
+               answers later with RESPOND. ON-REQUEST is shorthand for one
+               synchronous protocol named SCHEME (default \"iris\").
 
-PROTOCOLS lists custom URL schemes answered by Lisp, each as
-(SCHEME HANDLER &key ASYNC). HANDLER is called on the main thread with a
-REQUEST for each URL of SCHEME (e.g. \"iris://app/index.html\"). It returns
-the body, a string or a vector of octets, and optionally a content type
-(default text/html), a status (default 200) and further headers as an alist;
-returning NIL answers 404. With ASYNC, HANDLER is called with the REQUEST
-and a RESPONDER instead, returns at once, and answers later with RESPOND,
-from any thread. ON-REQUEST is shorthand for one synchronous protocol named
-SCHEME.
+Events and requests from WebKit
+  ON-NAVIGATE        (url) before each navigation; true lets it proceed.
+  ON-NEW-WINDOW      (url) for window.open and target=_blank: :HERE (the
+                     default without a handler), :BROWSER or NIL to ignore.
+  ON-PAGE-LOAD       (:STARTED url), (:FINISHED url) or (:FAILED url message).
+  ON-TITLE-CHANGE    (title) whenever the document's title changes.
+  ON-DIALOG          (kind message [default]) for alert, confirm and prompt:
+                     returns whether to confirm, or the text to answer.
+                     Without it they are sheets on the window.
+  ON-FILE-DIALOG     (&key multiple directories) for <input type=file>:
+                     returns paths, or NIL to cancel. Without it, an open panel.
+  ON-PERMISSION      (kind origin) for :CAMERA, :MICROPHONE or
+                     :CAMERA-AND-MICROPHONE: :GRANT, :DENY or :PROMPT.
+  ON-DOWNLOAD        (:STARTED url filename) returns where to save, NIL to
+                     cancel; then (:FINISHED url) or (:FAILED url message).
+                     Without it, downloads go to the Downloads folder. WebKit
+                     does not download responses from a custom scheme.
+  ON-DRAG-DROP       (event paths (x y)) for files dragged over the webview,
+                     EVENT one of :ENTER :OVER :DROP :LEAVE; true takes the
+                     drag from the page.
+  ON-WEB-PROCESS-TERMINATED  (webview) when WebKit's content process dies;
+                     without it, the page is reloaded.
 
-USER-AGENT replaces the user agent string WebKit sends. With DEVTOOLS, Web
-Inspector can inspect the webview. With NAVIGATION-GESTURES, swipes go back
-and forward. With VISIBLE NIL, the webview starts hidden. With TRANSPARENT,
-it draws no background, so a transparent page shows what is behind it;
-BACKGROUND-COLOR (\"#rrggbb\", (r g b [a]) or :CLEAR) also stops the white
-background, so the window's background color shows through, and is shown
-past the page's edges.
+Appearance and behaviour (most can change later through an accessor)
+  USER-AGENT, DEVTOOLS, NAVIGATION-GESTURES, VISIBLE, FOCUSED, ZOOM (1 is
+  100%), TRANSPARENT, BACKGROUND-COLOR (\"#rrggbb\", (r g b [a]) or :CLEAR;
+  the window's background shows through, and the color fills overscroll),
+  ACCEPT-FIRST-MOUSE.
 
-With AUTOPLAY, media plays without waiting for a user gesture; with AUTOPLAY
-NIL, all media waits for one. With INCOGNITO, cookies, storage and caches
-stay in memory, apart from other webviews. With JAVASCRIPT NIL, pages run no
-scripts of their own (EVAL-JS and init scripts still run).
-ON-NAVIGATE is called with the URL of each navigation before it happens,
-including the first load and links; it returns true to let it proceed.
-ON-NEW-WINDOW is called with the URL a page wants to open in a new window
-(window.open, target=_blank) and returns :HERE to load it in this webview,
-:BROWSER to open it in the default browser, or NIL to ignore it; without it,
-such links open here.
-ON-DIALOG answers alert(), confirm() and prompt(): it is called with :ALERT,
-:CONFIRM or :PROMPT, the message and, for :PROMPT, the default text, and
-returns whether to confirm, or the text to answer. Without it, they are
-shown as sheets on the window.
-ON-FILE-DIALOG chooses files for <input type=file>: it is called with the
-keywords :MULTIPLE and :DIRECTORIES saying what the input accepts and
-returns a list of paths, or NIL to cancel. Without it, an open panel is
-shown as a sheet on the window.
-ON-PERMISSION decides a page's request for :CAMERA, :MICROPHONE or
-:CAMERA-AND-MICROPHONE, called with that and the page's origin; it returns
-:GRANT, :DENY or :PROMPT (ask the user, as WebKit does without it).
-ON-DOWNLOAD follows downloads: what WebKit cannot show, and links with the
-download attribute. It is called with :STARTED, the URL and the suggested
-file name, and returns the path to save to, or NIL to cancel; then with
-:FINISHED and the URL, or :FAILED, the URL and an error message. Without it,
-downloads go to the Downloads folder. (WebKit does not turn responses from a
-custom scheme into downloads; such a page can still offer a blob with the
-download attribute.)
-ON-DRAG-DROP hears files dragged onto the webview: it is called with
-:ENTER, :OVER, :DROP or :LEAVE, the list of paths, and the position as
-(x y) from the webview's top-left corner, and returns true to take the drag
-from the page.
-ON-PAGE-LOAD is called with :STARTED or :FINISHED and the URL as a page
-loads, or with :FAILED, the URL and an error message.
-ON-TITLE-CHANGE is called with the document's title whenever it changes.
-ON-WEB-PROCESS-TERMINATED is called with the webview when WebKit's content
-process for it dies; without it, the page is reloaded.
-
-With FOCUSED, it takes the keyboard focus. ZOOM scales the page (1 is 100%). With ACCEPT-FIRST-MOUSE, a click on the webview of an
-inactive window reaches the page as well as activating the window.
-BACKGROUND-THROTTLING is :SUSPEND, :THROTTLE or :NONE: what happens to the
-page while it is not visible (macOS 14 and later). PROXY, (:HTTP host port)
-or (:SOCKS5 host port), routes the webview's traffic through a proxy (macOS
-14 and later); it applies to the webview's data store, which every
-non-INCOGNITO webview shares.
-
-INIT-SCRIPTS run at the start of every document, before the page's own
-scripts: each is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T).
-
-If URL is given, it is loaded, with HEADERS (an alist); or else HTML, a string, is shown as if
-loaded from BASE-URL."
+Configuration (fixed when the webview is made)
+  AUTOPLAY             media plays without a user gesture; NIL makes all
+                       media wait for one.
+  INCOGNITO            cookies, storage and caches in memory, apart from
+                       other webviews.
+  JAVASCRIPT           NIL stops the page's own scripts (EVAL-JS and init
+                       scripts still run).
+  BACKGROUND-THROTTLING  :SUSPEND, :THROTTLE or :NONE while not visible
+                       (macOS 14 and later).
+  PROXY                (:HTTP host port) or (:SOCKS5 host port), on the
+                       webview's data store, which every non-INCOGNITO
+                       webview shares (macOS 14 and later)."
   (declare (ignore on-message))
   (when (and url html)
     (error "Give MAKE-WEBVIEW a URL or HTML, not both."))
