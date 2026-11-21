@@ -32,7 +32,8 @@ SCHEME.
 
 USER-AGENT replaces the user agent string WebKit sends. With DEVTOOLS, Web
 Inspector can inspect the webview. With NAVIGATION-GESTURES, swipes go back
-and forward. With VISIBLE NIL, the webview starts hidden.
+and forward. With VISIBLE NIL, the webview starts hidden. With TRANSPARENT,
+it draws no background, so a transparent page shows what is behind it.
 
 INIT-SCRIPTS run at the start of every document, before the page's own
 scripts: each is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T).

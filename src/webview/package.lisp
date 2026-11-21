@@ -16,6 +16,7 @@
            #:webview-devtools-p
            #:webview-navigation-gestures-p
            #:webview-visible-p
+           #:webview-transparent-p
            #:eval-js
            #:javascript-error
            #:request

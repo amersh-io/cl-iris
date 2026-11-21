@@ -33,7 +33,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_permission_handler` | `:on-permission` (camera, microphone) | planned | |
 | `with_user_agent` | `:user-agent`, `(setf webview-user-agent)` | done | "a custom user agent reaches navigator and requests", "the user agent can change on a live webview" |
 | `with_devtools` | `:devtools`, `(setf webview-devtools-p)` (Web Inspector via `isInspectable`) | done | "devtools makes a webview inspectable" |
-| `with_transparent` | `:transparent` | planned | |
+| `with_transparent` | `:transparent`, `(setf webview-transparent-p)` | done | "a transparent webview draws no background" |
 | `with_background_color` | `:background-color` | planned | |
 | `with_visible` | `:visible` | done | "a webview can start hidden and keep running its page" |
 | `with_focused` | `:focused` | planned | |

@@ -90,3 +90,27 @@ or Inspect Element in its context menu).")
 
 (define-view-option :visible (webview visible)
   (send webview "setHidden:" :bool (not visible) :void))
+
+;;; Transparency: WKWebView has no public switch for its opaque background on
+;;; macOS; its drawsBackground key, set through key-value coding, is what
+;;; WebKit's own clients use.
+
+(defun set-draws-background (webview draws)
+  (send webview "setValue:forKey:"
+        :pointer (lisp->objc (if draws t :false))
+        :pointer (ns-string "drawsBackground")
+        :void))
+
+(defun webview-transparent-p (webview)
+  "True if WEBVIEW draws no background of its own, letting what is behind it
+show through wherever the page itself is transparent."
+  (on-main
+   (lambda ()
+     (not (objc->lisp (send webview "valueForKey:" :pointer (ns-string "drawsBackground")))))))
+
+(defun (setf webview-transparent-p) (transparent webview)
+  (on-main (lambda () (set-draws-background webview (not transparent))))
+  transparent)
+
+(define-view-option :transparent (webview transparent)
+  (set-draws-background webview (not transparent)))

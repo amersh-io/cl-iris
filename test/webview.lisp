@@ -307,6 +307,15 @@
                (progn (setf (webview-visible-p other) t)
                       (webview-visible-p other)))
         (destroy-webview other))
+      (let ((other (make-webview window :transparent t)))
+        (check "a transparent webview draws no background"
+               (webview-transparent-p other))
+        (check "transparency can be switched off again"
+               (progn (setf (webview-transparent-p other) nil)
+                      (not (webview-transparent-p other))))
+        (destroy-webview other))
+      (check "webviews are opaque by default"
+             (not (webview-transparent-p webview)))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"
