@@ -20,7 +20,8 @@
 (defun webview-checks ()
   (let* ((messages '())
          (lock (sb-thread:make-mutex))
-         (window (make-window :title "cl-iris webview test" :width 640 :height 400))
+         (window (make-window :title "cl-iris webview test" :width 640 :height 400
+                              :activate nil))
          (webview nil))
     (flet ((received (message)
              (sb-thread:with-mutex (lock) (member message messages :test #'equal))))

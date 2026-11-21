@@ -134,19 +134,25 @@ Queued work runs only while the main thread is in RUN-APPLICATION."
 (defun app ()
   (send (find-class* "NSApplication") "sharedApplication"))
 
-(defconstant +activation-policy-regular+ 0)
+(defun activation-policy-value (policy)
+  (ecase policy
+    (:regular 0)      ; a Dock icon and a menu bar, like any application
+    (:accessory 1)    ; no Dock icon; windows still show
+    (:prohibited 2))) ; no windows at all
 (defconstant +event-type-application-defined+ 15)
 
-(defun run-application (&key on-launch)
+(defun run-application (&key on-launch (activation-policy :regular))
   "Run the Cocoa application on the main thread until STOP-APPLICATION.
 ON-LAUNCH, if given, is called on the main thread once the loop is running.
+ACTIVATION-POLICY is :REGULAR, :ACCESSORY (no Dock icon) or :PROHIBITED.
 Must be called on the main thread."
   (unless (main-thread-p)
     (error "RUN-APPLICATION must be called on the main thread."))
   (with-cocoa-float-traps
     (with-autorelease-pool
       (let ((app (app)))
-        (send app "setActivationPolicy:" :long +activation-policy-regular+ :bool)
+        (send app "setActivationPolicy:"
+              :long (activation-policy-value activation-policy) :bool)
         (when on-launch
           (on-main on-launch :wait nil))
         (send app "run" :void)))))
@@ -181,9 +187,12 @@ Must be called on the main thread."
 
 (defconstant +backing-store-buffered+ 2)
 
-(defun make-window (&key (title "") (x 200) (y 200) (width 800) (height 600))
+(defun make-window (&key (title "") (x 200) (y 200) (width 800) (height 600)
+                      (activate t))
   "Open a window whose content area is WIDTH by HEIGHT points, with its
-bottom-left corner at X, Y on the screen, and return it."
+bottom-left corner at X, Y on the screen, and return it. With ACTIVATE, the
+application is brought to the front; without it, the window opens without
+taking focus from other applications."
   (on-main
    (lambda ()
      (let ((window (send (send (find-class* "NSWindow") "alloc")
@@ -198,7 +207,8 @@ bottom-left corner at X, Y on the screen, and return it."
        (send window "setReleasedWhenClosed:" :bool nil :void)
        (send window "setTitle:" :pointer (ns-string title) :void)
        (send window "makeKeyAndOrderFront:" :pointer (cffi:null-pointer) :void)
-       (send (app) "activateIgnoringOtherApps:" :bool t :void)
+       (when activate
+         (send (app) "activateIgnoringOtherApps:" :bool t :void))
        window))))
 
 (defun close-window (window)

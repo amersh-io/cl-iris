@@ -19,7 +19,7 @@
            (on-main (lambda () (push :first log)) :wait nil)
            (on-main (lambda () (push :second log)))
            (equal '(:second :first) log)))
-  (let ((window (make-window :title "cl-iris test" :width 640 :height 400)))
+  (let ((window (make-window :title "cl-iris test" :width 640 :height 400 :activate nil)))
     (check "a window gets a window number"
            (plusp (window-number window)))
     (check "a window keeps its title"
@@ -39,6 +39,8 @@ application. Give up and exit the process if it takes more than TIMEOUT seconds.
                      (sb-ext:exit :code 3 :abort t))
                    :name "cl-iris test watchdog")))
     (run-application
+     ;; Tests run often and must not take focus or add a Dock icon.
+     :activation-policy :accessory
      :on-launch (lambda ()
                   (sb-thread:make-thread
                    (lambda ()
