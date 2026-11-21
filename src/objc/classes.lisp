@@ -106,7 +106,11 @@ PROTOCOLS not registered with the runtime are skipped. Returns the class."
                               (intern (format nil "~A ~A" name selector))
                               (intern (format nil "~A ~A imp" name selector))))))
     `(progn
+       ;; NOTINLINE: without it SBCL trusts the type it derived for the method
+       ;; function in this file, and a redefinition returning another type
+       ;; would be rejected at the call.
        ,@(loop for (nil return-type self arguments body function) in specs
+               collect `(declaim (notinline ,function))
                collect `(defun ,function (,self ,@(mapcar #'first arguments))
                           (declare (ignorable ,self))
                           ,@body))

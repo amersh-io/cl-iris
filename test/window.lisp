@@ -123,3 +123,25 @@ main thread, outside any application."
            (null (stop-application)))
     (check "waiting leaves no handles behind"
            (= before (handle-count)))))
+
+;;; Redefining code while the application runs
+
+(define-objc-class "CLIrisLiveTarget" ()
+  (:method "value" :int (self) 1))
+
+(defun live-redefinition-checks ()
+  (let ((object (on-main (lambda ()
+                           (send (send (find-class* "CLIrisLiveTarget") "alloc") "init")))))
+    (flet ((value () (on-main (lambda () (send object "value" :int)))))
+      (check "a live object answers its declared method"
+             (= 1 (value)))
+      (check "redefining a method's Lisp function changes the live object"
+             (let ((name (intern "CLIrisLiveTarget value" :cl-iris/test)))
+               (setf (fdefinition name) (lambda (self) (declare (ignore self)) 2))
+               (= 2 (value))))
+      (check "evaluating the declaration again replaces the method"
+             (progn
+               (eval '(define-objc-class "CLIrisLiveTarget" ()
+                       (:method "value" :int (self) 3)))
+               (= 3 (value))))
+      (on-main (lambda () (release object))))))

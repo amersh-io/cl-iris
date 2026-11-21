@@ -7,7 +7,7 @@
   (block-tests)
   (declared-class-tests)
   (main-thread-wait-checks)
-  (application-tests (list #'window-checks #'webview-checks))
+  (application-tests (list #'window-checks #'live-redefinition-checks #'webview-checks))
   (when *failures*
     (error "~D cl-iris test~:P failed: ~{~A~^, ~}"
            (length *failures*) (reverse *failures*)))

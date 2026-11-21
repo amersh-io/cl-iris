@@ -11,6 +11,11 @@
         ((string= url "iris://app/data.txt") (values "from lisp" "text/plain"))
         (t nil)))
 
+(defvar *late-bound-messages* '())
+
+(defun late-bound-handler (message)
+  (push (list :first message) *late-bound-messages*))
+
 (defun wait-until (predicate &key (timeout 10))
   "Poll PREDICATE until it returns true or TIMEOUT seconds pass."
   (loop repeat (* timeout 20)
@@ -77,5 +82,14 @@
              (progn
                (eval-js webview "fetch('iris://app/missing').then(r => window.webkit.messageHandlers.iris.postMessage('status:' + r.status)); 0")
                (wait-until (lambda () (received "status:404")))))
+      (check "a handler given as a symbol follows its redefinition"
+             (let* ((other (make-webview window :on-message 'late-bound-handler)))
+               (load-html other "<script>window.webkit.messageHandlers.iris.postMessage('one')</script>")
+               (wait-until (lambda () *late-bound-messages*))
+               (setf (fdefinition 'late-bound-handler)
+                     (lambda (message) (push (list :second message) *late-bound-messages*)))
+               (eval-js other "window.webkit.messageHandlers.iris.postMessage('two'); 0")
+               (prog1 (wait-until (lambda () (equal '(:second "two") (first *late-bound-messages*))))
+                 (destroy-webview other))))
       (destroy-webview webview)
       (close-window window))))
