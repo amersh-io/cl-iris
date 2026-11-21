@@ -98,7 +98,7 @@ the loop is not running."
              :bool t
              :void)))))
 
-;;; The Dock
+;;; The application as a whole: the Dock and hiding
 
 (defun dock-badge ()
   "The text on the application's Dock icon, or NIL."
@@ -127,3 +127,16 @@ nothing to ask for."
 (defun cancel-user-attention (request)
   (on-main (lambda () (send (app) "cancelUserAttentionRequest:" :long request :void)))
   nil)
+
+(defun hide-application ()
+  "Hide all of the application's windows, as Cmd+H does."
+  (on-main (lambda () (send (app) "hide:" :pointer (cffi:null-pointer) :void)))
+  nil)
+
+(defun unhide-application ()
+  "Show the windows HIDE-APPLICATION hid, without activating the application."
+  (on-main (lambda () (send (app) "unhideWithoutActivation" :void)))
+  nil)
+
+(defun application-hidden-p ()
+  (on-main (lambda () (send (app) "isHidden" :bool))))

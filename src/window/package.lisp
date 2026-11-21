@@ -73,6 +73,9 @@
            #:dock-badge
            #:request-user-attention
            #:cancel-user-attention
+           #:hide-application
+           #:unhide-application
+           #:application-hidden-p
            #:set-menu-bar
            #:find-menu-item
            #:menu-item-enabled-p

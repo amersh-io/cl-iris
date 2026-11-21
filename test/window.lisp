@@ -372,7 +372,17 @@ replaces it."
   (check "asking for attention gives a request that can be cancelled"
          (let ((request (request-user-attention)))
            (and (or (null request) (integerp request))
-                (progn (when request (cancel-user-attention request)) t)))))
+                (progn (when request (cancel-user-attention request)) t))))
+  (let ((window (make-window :title "hide" :width 200 :height 100 :activate nil)))
+    (check "hiding the application hides its windows"
+           (progn (hide-application)
+                  (and (eventually #'application-hidden-p)
+                       (not (window-visible-p window)))))
+    (check "unhiding the application shows them again"
+           (progn (unhide-application)
+                  (and (eventually (lambda () (not (application-hidden-p))))
+                       (window-visible-p window))))
+    (close-window window)))
 
 (defun screen-checks ()
   (let ((screens (screens)))
