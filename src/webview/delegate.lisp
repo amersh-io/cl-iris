@@ -109,7 +109,21 @@
 (define-objc-class "CLIrisWebView" (:superclass "WKWebView")
   (:method "acceptsFirstMouse:" :bool (self (event :pointer))
     (declare (ignore event))
-    (and (route self :accept-first-mouse) t)))
+    (and (route self :accept-first-mouse) t))
+  (:method "draggingEntered:" :unsigned-long (self (info :pointer))
+    (if (drag-event self :enter info)
+        +drag-operation-copy+
+        (send-super self "CLIrisWebView" "draggingEntered:" :pointer info :unsigned-long)))
+  (:method "draggingUpdated:" :unsigned-long (self (info :pointer))
+    (if (drag-event self :over info)
+        +drag-operation-copy+
+        (send-super self "CLIrisWebView" "draggingUpdated:" :pointer info :unsigned-long)))
+  (:method "draggingExited:" :void (self (info :pointer))
+    (drag-event self :leave info)
+    (send-super self "CLIrisWebView" "draggingExited:" :pointer info :void))
+  (:method "performDragOperation:" :bool (self (info :pointer))
+    (or (drag-event self :drop info)
+        (send-super self "CLIrisWebView" "performDragOperation:" :pointer info :bool))))
 
 (defun webview-class ()
   (find-class* "CLIrisWebView"))

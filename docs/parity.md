@@ -28,7 +28,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_new_window_req_handler` | `:on-new-window` (`:here`, `:browser` or `nil`) | done | "on-new-window can refuse window.open" |
 | `with_on_page_load_handler` | `:on-page-load` (started, finished, failed) | done | "on-page-load hears a page start and finish", "on-page-load hears a load fail" |
 | `with_document_title_changed_handler` | `:on-title-change` | done | "on-title-change hears a script change the title" |
-| `with_drag_drop_handler` | `:on-drag-drop` | planned | |
+| `with_drag_drop_handler` | `:on-drag-drop` (`:enter`, `:over`, `:drop`, `:leave`) | done | "on-drag-drop hears files dragged over, with their position", "on-drag-drop can take a drop from the page" |
 | `with_download_started_handler`, `with_download_completed_handler` | `:on-download` (`:started`, `:finished`, `:failed`) | done | "a response WebKit cannot show is downloaded where on-download says", "a link with the download attribute is downloaded under its name" |
 | `with_permission_handler` | `:on-permission` (camera, microphone) | done | "on-permission decides a request for the microphone" |
 | `with_user_agent` | `:user-agent`, `(setf webview-user-agent)` | done | "a custom user agent reaches navigator and requests", "the user agent can change on a live webview" |

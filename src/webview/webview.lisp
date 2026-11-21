@@ -132,6 +132,10 @@ file name, and returns the path to save to, or NIL to cancel; then with
 downloads go to the Downloads folder. (WebKit does not turn responses from a
 custom scheme into downloads; such a page can still offer a blob with the
 download attribute.)
+ON-DRAG-DROP hears files dragged onto the webview: it is called with
+:ENTER, :OVER, :DROP or :LEAVE, the list of paths, and the position as
+(x y) from the webview's top-left corner, and returns true to take the drag
+from the page.
 ON-PAGE-LOAD is called with :STARTED or :FINISHED and the URL as a page
 loads, or with :FAILED, the URL and an error message.
 ON-TITLE-CHANGE is called with the document's title whenever it changes.

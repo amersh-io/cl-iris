@@ -61,6 +61,7 @@
                (:file "navigation")
                (:file "ui")
                (:file "download")
+               (:file "dragdrop")
                (:file "delegate")
                (:file "options")
                (:file "webview")

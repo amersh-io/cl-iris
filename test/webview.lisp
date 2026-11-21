@@ -84,6 +84,25 @@ proxy -- with what RESPOND returns for its request line; return the port."
                  (unless (cffi:null-pointer-p text) (lisp-string text)))
           (release document))))))
 
+;;; A stand-in for the NSDraggingInfo AppKit passes while files are dragged:
+;;; the real one only comes from a mouse. Its location, an NSPoint returned by
+;;; value, cannot come from a Lisp callback, so the test redefines the Lisp
+;;; function that reads it.
+
+(defvar *test-drag-pasteboard* nil)
+
+(define-objc-class "CLIrisTestDraggingInfo" ()
+  (:method "draggingPasteboard" :pointer (self)
+    *test-drag-pasteboard*))
+
+(defun test-dragging-info (paths)
+  (let ((pasteboard (send (find-class* "NSPasteboard") "pasteboardWithUniqueName")))
+    (send pasteboard "clearContents" :long)
+    (send pasteboard "writeObjects:"
+          :pointer (cl-iris/webview::file-url-array paths) :bool)
+    (setf *test-drag-pasteboard* pasteboard)
+    (send (send (find-class* "CLIrisTestDraggingInfo") "alloc") "init")))
+
 (defvar *late-bound-messages* '())
 
 (defun late-bound-handler (message)
@@ -784,6 +803,35 @@ proxy -- with what RESPOND returns for its request line; return the port."
                                (equal "named.bin" (third (saw :started)))
                                (equal "blob bytes" (uiop:read-file-string saved))))))
           (destroy-webview other)))
+      (let* ((events '())
+             (other (make-webview window :bounds '(0 0 300 200)
+                                         :on-drag-drop (lambda (event paths position)
+                                                         (push (list event paths position) events)
+                                                         ;; Take every event: passing the
+                                                         ;; stand-in on to WebKit would fail.
+                                                         t))))
+        (multiple-value-bind (width height) (window-content-size window)
+          (declare (ignore width))
+          (let ((info (on-main (lambda () (test-dragging-info (list "/tmp/one.txt")))))
+                (reader (fdefinition 'cl-iris/webview::dragging-location)))
+            ;; The webview sits at the window's top-left: window coordinates
+            ;; count from the bottom.
+            (setf (fdefinition 'cl-iris/webview::dragging-location)
+                  (lambda (info) (declare (ignore info)) (make-point 10 (- height 20))))
+            (unwind-protect
+                 (progn
+                   (on-main (lambda ()
+                              (send other "draggingEntered:" :pointer info :unsigned-long)
+                              (send other "draggingUpdated:" :pointer info :unsigned-long)))
+                   (check "on-drag-drop hears files dragged over, with their position"
+                          (equal '((:over ("/tmp/one.txt") (10d0 20d0))
+                                   (:enter ("/tmp/one.txt") (10d0 20d0)))
+                                 events))
+                   (check "on-drag-drop can take a drop from the page"
+                          (on-main (lambda () (send other "performDragOperation:" :pointer info :bool)))))
+              (setf (fdefinition 'cl-iris/webview::dragging-location) reader)
+              (on-main (lambda () (release info))))))
+        (destroy-webview other))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"
