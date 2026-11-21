@@ -12,4 +12,10 @@
            #:load-url
            #:load-html
            #:eval-js
-           #:javascript-error))
+           #:javascript-error
+           #:request
+           #:request-url
+           #:request-method
+           #:request-headers
+           #:request-header
+           #:request-body))

@@ -10,10 +10,10 @@
 ON-MESSAGE is called on the main thread with each value a page posts to
 window.webkit.messageHandlers.iris (strings and numbers arrive as such).
 
-ON-REQUEST is called on the main thread with the URL of each request for
+ON-REQUEST is called on the main thread with a REQUEST for each URL of
 SCHEME (e.g. \"iris://app/index.html\"). It returns the body, a string or a
-vector of octets, and optionally a content type (default text/html);
-returning NIL answers 404.
+vector of octets, and optionally a content type (default text/html), a status
+(default 200) and further headers as an alist; returning NIL answers 404.
 
 If URL is given, it is loaded."
   (let ((webview (on-main (lambda () (%make-webview window on-message scheme on-request)))))

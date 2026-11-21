@@ -55,6 +55,7 @@
   :serial t
   :components ((:file "package")
                (:file "runtime")
+               (:file "scheme")
                (:file "delegate")
                (:file "webview")
                (:file "eval")))

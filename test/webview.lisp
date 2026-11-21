@@ -6,10 +6,18 @@
   "<!doctype html><title>iris</title>
 <script>window.webkit.messageHandlers.iris.postMessage('ready:' + location.href)</script>")
 
-(defun serve (url)
-  (cond ((string= url "iris://app/index.html") *index-html*)
-        ((string= url "iris://app/data.txt") (values "from lisp" "text/plain"))
-        (t nil)))
+(defvar *last-request* nil)
+
+(defun serve (request)
+  (let ((url (request-url request)))
+    (setf *last-request* request)
+    (cond ((string= url "iris://app/index.html") *index-html*)
+          ((string= url "iris://app/data.txt") (values "from lisp" "text/plain"))
+          ((string= url "iris://app/echo")
+           (values (request-body request) "application/octet-stream" 201
+                   (list (cons "X-Echo-Method" (request-method request))
+                         (cons "X-Echo-Header" (or (request-header request "x-test") "")))))
+          (t nil))))
 
 (defvar *late-bound-messages* '())
 
@@ -82,6 +90,12 @@
              (progn
                (eval-js webview "fetch('iris://app/missing').then(r => window.webkit.messageHandlers.iris.postMessage('status:' + r.status)); 0")
                (wait-until (lambda () (received "status:404")))))
+      (check "a request carries its method, headers and body"
+             (progn
+               (eval-js webview "fetch('iris://app/echo', {method: 'POST', headers: {'X-Test': 'yes'}, body: 'payload'}).then(async r => window.webkit.messageHandlers.iris.postMessage(['echo', r.status, r.headers.get('X-Echo-Method'), r.headers.get('X-Echo-Header'), await r.text()].join('|'))); 0")
+               (wait-until (lambda () (received "echo|201|POST|yes|payload")))))
+      (check "request headers are an alist"
+             (equal "yes" (request-header *last-request* "X-TEST")))
       (check "a handler given as a symbol follows its redefinition"
              (let* ((other (make-webview window :on-message 'late-bound-handler)))
                (load-html other "<script>window.webkit.messageHandlers.iris.postMessage('one')</script>")
