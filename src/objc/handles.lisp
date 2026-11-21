@@ -36,12 +36,13 @@ handle has been released."
       handle)))
 
 (defun release-handle (handle)
-  "Remove an owner from HANDLE, forgetting it when none is left."
+  "Remove an owner from HANDLE, forgetting it when none is left. Returns true
+when this release forgot it."
   (sb-thread:with-mutex (*handles-lock*)
     (let ((entry (gethash handle *handles*)))
       (when (and entry (<= (decf (cdr entry)) 0))
-        (remhash handle *handles*))
-      nil)))
+        (remhash handle *handles*)
+        t))))
 
 (defun take-handle (handle)
   "Forget HANDLE whatever its owners, returning its value and whether it was

@@ -75,6 +75,18 @@
                (main-thread-timeout () t)))
       (check "eval-js works again after a timeout"
              (eql 2 (eval-js webview "1 + 1")))
+      (check "a completion handler released uncalled reports that it was dropped"
+             (let ((outcome nil))
+               (release-block (cl-iris/webview::make-completion-block
+                               (lambda (value message) (setf outcome (list value message)))))
+               (and (equal (list nil cl-iris/webview::*dropped-message*) outcome)
+                    (let ((called nil) (dropped nil))
+                      (let ((block (make-block (cffi:callback cl-iris/webview::js-completion)
+                                               (lambda (&rest args) (declare (ignore args)) (setf called t))
+                                               :on-drop (lambda () (setf dropped t)))))
+                        (call-block block :pointer (cffi:null-pointer) :pointer (cffi:null-pointer))
+                        (release-block block))
+                      (and called (not dropped))))))
       (check "eval-js refuses to wait on the main thread"
              (handler-case (progn (on-main (lambda () (eval-js webview "1"))) nil)
                (error (e) (search "main thread" (princ-to-string e)))))

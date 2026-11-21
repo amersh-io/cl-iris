@@ -20,14 +20,26 @@
              (unless (cffi:null-pointer-p error)
                (lisp-string (send error "localizedDescription"))))))
 
+(defparameter *dropped-message*
+  "WebKit released the completion handler without calling it")
+
+(defun make-completion-block (callback)
+  "A block for -evaluateJavaScript:completionHandler: that calls CALLBACK with
+the value and an error message, or with NIL and *DROPPED-MESSAGE* if WebKit
+lets it go uncalled (as when the web content process dies)."
+  (make-block (cffi:callback js-completion) (completion-function callback)
+              :on-drop (lambda () (funcall callback nil *dropped-message*))))
+
 (defun evaluate (webview script callback)
   "On the main thread: start evaluating SCRIPT, calling CALLBACK with the
 value and an error message (or NIL) when it finishes."
-  (with-block (block (cffi:callback js-completion) (completion-function callback))
-    (send webview "evaluateJavaScript:completionHandler:"
-          :pointer (ns-string script)
-          :pointer block
-          :void)))
+  (let ((block (make-completion-block callback)))
+    (unwind-protect
+         (send webview "evaluateJavaScript:completionHandler:"
+               :pointer (ns-string script)
+               :pointer block
+               :void)
+      (release-block block))))
 
 (defun eval-js (webview script &key (wait t) callback timeout)
   "Evaluate SCRIPT in WEBVIEW.

@@ -26,8 +26,27 @@
   (declare (ignore source))
   (retain-handle (cffi:mem-ref destination :int64 +block-handle-offset+)))
 
+;;; Blocks made with :ON-DROP remember whether they were ever called; when the
+;;; last reference goes without a call, ON-DROP runs instead. APIs that promise
+;;; to call a completion handler sometimes just release it (WebKit, when the
+;;; web process dies), and whoever waits for that call must hear about it.
+
+(defvar *drop-hooks* (make-hash-table)
+  "Handle -> (CALLED-P . ON-DROP) for blocks made with :ON-DROP.")
+(defvar *drop-hooks-lock* (sb-thread:make-mutex :name "cl-iris block drop hooks"))
+
+(defun run-drop-hook (handle)
+  (let ((entry (sb-thread:with-mutex (*drop-hooks-lock*)
+                 (prog1 (gethash handle *drop-hooks*)
+                   (remhash handle *drop-hooks*)))))
+    (when (and entry (not (car entry)))
+      (handler-case (funcall (cdr entry))
+        (serious-condition (c) (report-error "a block's on-drop function" c))))))
+
 (cffi:defcallback block-dispose-helper :void ((block :pointer))
-  (release-handle (cffi:mem-ref block :int64 +block-handle-offset+)))
+  (let ((handle (cffi:mem-ref block :int64 +block-handle-offset+)))
+    (when (release-handle handle)
+      (run-drop-hook handle))))
 
 ;;; Descriptors are shared by every block with the same signature. They live in
 ;;; malloc'd memory, which an image saved with SAVE-LISP-AND-DIE does not keep,
@@ -56,15 +75,25 @@
                           (cffi:null-pointer)))
                 descriptor)))))
 
-(defun make-block (invoker function &key signature)
+(defun make-block (invoker function &key signature on-drop)
   "Return a new heap block that calls FUNCTION through INVOKER, a callback
 defined with DEFINE-BLOCK-INVOKER. SIGNATURE is the block's Objective-C type
-encoding, e.g. \"v24@?0@8@16\"; most APIs do not need it.
+encoding, e.g. \"v24@?0@8@16\"; most APIs do not need it. ON-DROP, a function
+of no arguments, is called (on whatever thread releases it) if the block is
+freed without ever having been called.
 
 The caller owns one reference: pass the block on, then RELEASE-BLOCK it (or
 use WITH-BLOCK). APIs that keep the block take their own reference."
-  (let ((handle (make-handle function))
-        (literal (cffi:foreign-alloc :uint8 :count +block-literal-size+)))
+  (let* ((called (cons nil on-drop))
+         (handle (make-handle (if on-drop
+                                  (lambda (&rest arguments)
+                                    (setf (car called) t)
+                                    (apply function arguments))
+                                  function)))
+         (literal (cffi:foreign-alloc :uint8 :count +block-literal-size+)))
+    (when on-drop
+      (sb-thread:with-mutex (*drop-hooks-lock*)
+        (setf (gethash handle *drop-hooks*) called)))
     (unwind-protect
          (progn
            (setf (cffi:mem-ref literal :pointer 0)
