@@ -9,7 +9,8 @@
   (exception-tests)
   (saved-image-tests)
   (main-thread-wait-checks)
-  (application-tests (list #'window-checks #'live-redefinition-checks #'webview-checks))
+  (application-tests (list #'window-checks #'live-redefinition-checks #'webview-checks)
+                     :timeout 300)
   (when *failures*
     (error "~D cl-iris test~:P failed: ~{~A~^, ~}"
            (length *failures*) (reverse *failures*)))
