@@ -25,8 +25,14 @@
   :description "The NSApplication loop on the main thread, NSWindow, and GCD."
   :license "Apache-2.0"
   :depends-on ("cl-iris/objc" "cffi-libffi")
-  :pathname "src/"
-  :components ((:file "window")))
+  :pathname "src/window/"
+  :serial t
+  :components ((:file "package")
+               (:file "runtime")
+               (:file "traps")
+               (:file "dispatch")
+               (:file "application")
+               (:file "window")))
 
 (defsystem "cl-iris/webview"
   :description "WKWebView with JavaScript <-> Lisp messaging and custom URL schemes."
