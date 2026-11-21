@@ -252,3 +252,31 @@ from every other webview, and forgets them when it goes."
                                   :accept-first-mouse)
                             (and accept t))))
   accept)
+
+;;; Background color. As in wry, the webview stops drawing its own white
+;;; background, so what is behind it -- the window's background color, say --
+;;; shows wherever the page paints nothing, and the color is set as the
+;;; under-page color, shown when scrolling past the page's edges (macOS 12 and
+;;; later). WKWebView offers no public way to paint behind the page itself.
+
+(defun set-background-color (webview color)
+  (let ((ns-color (ns-color color)))
+    (set-draws-background webview nil)
+    (send webview "setUnderPageBackgroundColor:" :pointer ns-color :void)))
+
+(defun webview-background-color (webview)
+  "WEBVIEW's under-page color as (red green blue alpha) from 0 to 1."
+  (on-main
+   (lambda ()
+     (ns-color-components (send webview "underPageBackgroundColor")))))
+
+(defun (setf webview-background-color) (color webview)
+  "Stop WEBVIEW drawing a white background of its own, so that what is behind
+it shows where the page paints nothing, and use COLOR -- \"#rrggbb\",
+\"#rrggbbaa\", (red green blue [alpha]) or :CLEAR -- past the page's edges."
+  (on-main (lambda () (set-background-color webview color)))
+  color)
+
+(define-view-option :background-color (webview color)
+  (when color
+    (set-background-color webview color)))

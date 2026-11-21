@@ -23,6 +23,7 @@
            #:webview-proxy-count
            #:webview-accepts-first-mouse-p
            #:webview-bounds
+           #:webview-background-color
            #:focus-webview
            #:webview-focused-p
            #:eval-js

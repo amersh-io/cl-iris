@@ -34,7 +34,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_user_agent` | `:user-agent`, `(setf webview-user-agent)` | done | "a custom user agent reaches navigator and requests", "the user agent can change on a live webview" |
 | `with_devtools` | `:devtools`, `(setf webview-devtools-p)` (Web Inspector via `isInspectable`) | done | "devtools makes a webview inspectable" |
 | `with_transparent` | `:transparent`, `(setf webview-transparent-p)` | done | "a transparent webview draws no background" |
-| `with_background_color` | `:background-color` | planned | |
+| `with_background_color` | `:background-color` (as in wry: the window's background shows through; the color fills overscroll) | done | "a background color is set and the white background goes" |
 | `with_visible` | `:visible` | done | "a webview can start hidden and keep running its page" |
 | `with_focused` | `:focused` | done | "a webview made with :focused takes the focus" |
 | `with_bounds` | `:bounds` (child webview inside a window) | done | "several webviews share one window, each in its bounds" |
@@ -62,7 +62,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `reload`, `go_back`, `go_forward` | `reload`, `go-back`, `go-forward` | planned | |
 | `can_go_back`, `can_go_forward` | `can-go-back-p`, `can-go-forward-p` | planned | |
 | `zoom` | `(setf webview-zoom)` | planned | |
-| `set_background_color` | `(setf webview-background-color)` | planned | |
+| `set_background_color` | `(setf webview-background-color)` | done | "the background color can change on a live webview" |
 | `bounds`, `set_bounds` | `webview-bounds`, `(setf webview-bounds)` | done | "a webview can be moved and resized" |
 | `set_visible` | `(setf webview-visible-p)` | done | "a hidden webview can be shown" |
 | `focus` | `focus-webview`, `webview-focused-p` | done | "focus moves between webviews" |

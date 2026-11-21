@@ -94,7 +94,10 @@ SCHEME.
 USER-AGENT replaces the user agent string WebKit sends. With DEVTOOLS, Web
 Inspector can inspect the webview. With NAVIGATION-GESTURES, swipes go back
 and forward. With VISIBLE NIL, the webview starts hidden. With TRANSPARENT,
-it draws no background, so a transparent page shows what is behind it.
+it draws no background, so a transparent page shows what is behind it;
+BACKGROUND-COLOR (\"#rrggbb\", (r g b [a]) or :CLEAR) also stops the white
+background, so the window's background color shows through, and is shown
+past the page's edges.
 
 With AUTOPLAY, media plays without waiting for a user gesture; with AUTOPLAY
 NIL, all media waits for one. With INCOGNITO, cookies, storage and caches

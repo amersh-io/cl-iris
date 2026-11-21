@@ -360,6 +360,15 @@ small page; return the port."
                (progn (setf (webview-transparent-p other) nil)
                       (not (webview-transparent-p other))))
         (destroy-webview other))
+      (let ((other (make-webview window :background-color "#ff8800")))
+        (check "a background color is set and the white background goes"
+               (and (equal '(1d0 0.53d0 0d0 1d0)
+                           (mapcar (lambda (x) (/ (fround x 0.01d0) 100)) (webview-background-color other)))
+                    (webview-transparent-p other)))
+        (check "the background color can change on a live webview"
+               (progn (setf (webview-background-color other) '(0 0 1))
+                      (equal '(0d0 0d0 1d0 1d0) (webview-background-color other))))
+        (destroy-webview other))
       (check "webviews are opaque by default"
              (not (webview-transparent-p webview)))
       (let ((playing (make-webview window :autoplay t))
