@@ -5,7 +5,7 @@
   :license "MIT"
   :version "0.0.1"
   :homepage "https://github.com/amersh-io/cl-iris"
-  :depends-on ("cl-iris/objc")
+  :depends-on ("cl-iris/objc" "cl-iris/window")
   :in-order-to ((test-op (test-op "cl-iris/test"))))
 
 (defsystem "cl-iris/objc"
@@ -15,9 +15,20 @@
   :pathname "src/"
   :components ((:file "objc")))
 
+(defsystem "cl-iris/window"
+  :description "The NSApplication loop on the main thread, NSWindow, and GCD."
+  :license "MIT"
+  :depends-on ("cl-iris/objc" "cffi-libffi")
+  :pathname "src/"
+  :components ((:file "window")))
+
 (defsystem "cl-iris/test"
   :license "MIT"
-  :depends-on ("cl-iris/objc")
+  :depends-on ("cl-iris/objc" "cl-iris/window")
   :pathname "test/"
-  :components ((:file "objc"))
+  :serial t
+  :components ((:file "package")
+               (:file "objc")
+               (:file "window")
+               (:file "run"))
   :perform (test-op (o c) (symbol-call :cl-iris/test :run!)))

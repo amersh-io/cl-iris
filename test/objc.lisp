@@ -1,22 +1,6 @@
-;;;; Tests for cl-iris/objc. Run with (asdf:test-system "cl-iris").
-
-(defpackage #:cl-iris/test
-  (:use #:cl #:cl-iris/objc)
-  (:export #:run!))
+;;;; Tests for cl-iris/objc.
 
 (in-package #:cl-iris/test)
-
-(defvar *failures* '())
-
-(defmacro check (name form)
-  `(handler-case
-       (if ,form
-           (format t "~&ok    ~A~%" ,name)
-           (progn (push ,name *failures*)
-                  (format t "~&FAIL  ~A~%" ,name)))
-     (error (e)
-       (push ,name *failures*)
-       (format t "~&FAIL  ~A: ~A~%" ,name e))))
 
 ;;; Methods implemented in Lisp, called from the Objective-C runtime.
 
@@ -36,9 +20,7 @@
     (set-method class "greet:" (cffi:callback greet) "@@:@")
     (send (send class "alloc") "init")))
 
-(defun run! ()
-  "Run every test; signal an error if any of them fails."
-  (setf *failures* '())
+(defun objc-tests ()
   (with-autorelease-pool
     (check "find a class by name"
            (not (cffi:null-pointer-p (find-class* "NSObject"))))
@@ -61,8 +43,4 @@
       (check "ensure-class returns the existing class"
              (cffi:pointer-eq (send object "class")
                               (ensure-class "CLIrisTestObject" "NSObject")))
-      (send object "release")))
-  (when *failures*
-    (error "~D cl-iris test~:P failed: ~{~A~^, ~}"
-           (length *failures*) (reverse *failures*)))
-  t)
+      (send object "release"))))
