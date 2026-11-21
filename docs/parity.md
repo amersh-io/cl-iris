@@ -19,8 +19,8 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_url` | `make-webview :url` | done | "a page served from Lisp posts a message back" |
 | `with_url_and_headers`, `with_headers` | `make-webview :headers` | done | "a webview's first request carries the headers it was given" |
 | `with_html` | `make-webview :html` (and `:base-url`) | done | "a webview can start from a string of HTML" |
-| `with_initialization_script` | `:init-scripts` | planned | |
-| `with_initialization_script_for_main_only` | `:init-scripts` with a main-frame flag | planned | |
+| `with_initialization_script` | `:init-scripts`, `add-init-script` | done | "init scripts run before the page's own scripts", "add-init-script takes effect from the next load" |
+| `with_initialization_script_for_main_only` | `(source :main-frame-only t)` in `:init-scripts` | done | "a main-frame-only init script skips iframes" |
 | `with_custom_protocol` | `:protocols` (or `:on-request` for one) | done | "fetch reaches the Lisp scheme handler", "one webview answers several schemes", "a request carries its method, headers and body" |
 | `with_asynchronous_custom_protocol` | `:protocols` entry with `:async t`, `respond` from any thread | done | "an asynchronous handler answers later from another thread", "an answer to a stopped request is dropped, not sent" |
 | `with_ipc_handler` | `:on-message` | done | "a message from JavaScript is answered by eval-js" |

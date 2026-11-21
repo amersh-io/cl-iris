@@ -23,6 +23,9 @@ and a RESPONDER instead, returns at once, and answers later with RESPOND,
 from any thread. ON-REQUEST is shorthand for one synchronous protocol named
 SCHEME.
 
+INIT-SCRIPTS run at the start of every document, before the page's own
+scripts: each is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T).
+
 If URL is given, it is loaded, with HEADERS (an alist); or else HTML, a string, is shown as if
 loaded from BASE-URL."
   (declare (ignore on-message))
@@ -58,12 +61,39 @@ one registered twice."
              (push name seen)
           collect (list* name handler options))))
 
+(defconstant +inject-at-document-start+ 0)
+
+(defun user-script (source main-frame-only)
+  "An autoreleased WKUserScript running SOURCE at document start."
+  (autorelease
+   (send (send (find-class* "WKUserScript") "alloc")
+         "initWithSource:injectionTime:forMainFrameOnly:"
+         :pointer (ns-string source)
+         :long +inject-at-document-start+
+         :bool main-frame-only)))
+
+(defun add-user-script (controller script)
+  "Add SCRIPT, a string or (STRING &key MAIN-FRAME-ONLY), to CONTROLLER."
+  (destructuring-bind (source &key main-frame-only) (if (stringp script) (list script) script)
+    (send controller "addUserScript:" :pointer (user-script source main-frame-only) :void)))
+
+(defun add-init-script (webview script)
+  "Run SCRIPT in WEBVIEW at the start of every document from the next load
+on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
+  (on-main
+   (lambda ()
+     (add-user-script (send (send webview "configuration") "userContentController")
+                      script)))
+  nil)
+
 (defun %make-webview (window options)
   (let ((configuration (send (send (find-class* "WKWebViewConfiguration") "alloc") "init"))
         (delegate (send (send (delegate-class) "alloc") "init")))
-    (send (send configuration "userContentController")
-          "addScriptMessageHandler:name:"
-          :pointer delegate :pointer (ns-string *message-handler-name*) :void)
+    (let ((controller (send configuration "userContentController")))
+      (send controller "addScriptMessageHandler:name:"
+            :pointer delegate :pointer (ns-string *message-handler-name*) :void)
+      (dolist (script (getf options :init-scripts))
+        (add-user-script controller script)))
     (loop for (scheme) in (getf options :protocols)
           do (send configuration "setURLSchemeHandler:forURLScheme:"
                    :pointer delegate :pointer (ns-string scheme) :void))

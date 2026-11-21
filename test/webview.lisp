@@ -161,6 +161,31 @@
       (check "load-url refuses what is not a URL"
              (handler-case (progn (load-url webview "not a url") nil)
                (error (e) (search "absolute URL" (princ-to-string e)))))
+      (check "init scripts run before the page's own scripts"
+             (let ((other (make-webview
+                           window
+                           :init-scripts '("window.injected = 41;")
+                           :html "<script>document.title = 'seen ' + (window.injected + 1)</script>")))
+               (prog1 (wait-until (lambda () (equal "seen 42" (eval-js other "document.title"))))
+                 (destroy-webview other))))
+      (check "a main-frame-only init script skips iframes"
+             (let ((other (make-webview
+                           window
+                           :init-scripts '("window.everywhere = true;"
+                                           ("window.mainOnly = true;" :main-frame-only t))
+                           :html "<iframe srcdoc='<p>inner</p>'></iframe>")))
+               (prog1 (wait-until
+                       (lambda ()
+                         (equal "true|true|true|false"
+                                (eval-js other "(() => { const f = document.querySelector('iframe'); if (!f || !f.contentWindow.document.body) return ''; const w = f.contentWindow; return [!!window.everywhere, !!window.mainOnly, !!w.everywhere, !!w.mainOnly].join('|'); })()"))))
+                 (destroy-webview other))))
+      (check "add-init-script takes effect from the next load"
+             (let ((other (make-webview window :html "<p>first</p>")))
+               (wait-until (lambda () (equal "first" (eval-js other "document.body ? document.body.textContent : ''"))))
+               (add-init-script other "window.later = 'added';")
+               (load-html other "<p>second</p>")
+               (prog1 (wait-until (lambda () (equal "added" (eval-js other "window.later || ''"))))
+                 (destroy-webview other))))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"
              (handler-case (progn (make-webview window :protocols (list (list "https" #'serve))) nil)
                (error (e) (search "itself" (princ-to-string e)))))

@@ -11,6 +11,7 @@
            #:destroy-webview
            #:load-url
            #:load-html
+           #:add-init-script
            #:eval-js
            #:javascript-error
            #:request
