@@ -63,6 +63,8 @@
            #:on-window
            #:window-shadow-p
            #:window-ignores-mouse-p
+           #:window-content-protected-p
+           #:window-on-all-spaces-p
            #:run-after
            #:run-every
            #:cancel-timer

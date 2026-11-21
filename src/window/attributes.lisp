@@ -345,3 +345,33 @@ the title bar's buttons."
 as an overlay needs."
   (on-window window (lambda () (send window "setIgnoresMouseEvents:" :bool ignore :void)))
   ignore)
+
+;;; Screen capture and Spaces
+
+(defun window-content-protected-p (window)
+  (on-window window (lambda () (zerop (send window "sharingType" :unsigned-long)))))
+
+(defun (setf window-content-protected-p) (protected window)
+  "Keep WINDOW's content out of screenshots, screen recordings and screen
+sharing (it shows as blank there), or let it be captured again."
+  ;; NSWindowSharingNone is 0, NSWindowSharingReadOnly 1.
+  (on-window window (lambda () (send window "setSharingType:" :unsigned-long (if protected 0 1) :void)))
+  protected)
+
+(defconstant +collection-can-join-all-spaces+ 1)
+
+(defun window-on-all-spaces-p (window)
+  (on-window window (lambda () (logtest +collection-can-join-all-spaces+
+                                        (send window "collectionBehavior" :unsigned-long)))))
+
+(defun (setf window-on-all-spaces-p) (all window)
+  "Show WINDOW on every Space (desktop) instead of only the one it opened on."
+  (on-window window
+             (lambda ()
+               (let ((behavior (send window "collectionBehavior" :unsigned-long)))
+                 (send window "setCollectionBehavior:"
+                       :unsigned-long (if all
+                                          (logior behavior +collection-can-join-all-spaces+)
+                                          (logandc2 behavior +collection-can-join-all-spaces+))
+                       :void))))
+  all)

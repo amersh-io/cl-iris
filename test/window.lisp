@@ -157,6 +157,16 @@ AppKit animates."
            (and (not (window-ignores-mouse-p window))
                 (progn (setf (window-ignores-mouse-p window) t)
                        (window-ignores-mouse-p window))))
+    (check "a window's content can be kept out of screen captures"
+           (and (not (window-content-protected-p window))
+                (progn (setf (window-content-protected-p window) t)
+                       (window-content-protected-p window))))
+    (check "a window can be shown on every Space"
+           (and (not (window-on-all-spaces-p window))
+                (progn (setf (window-on-all-spaces-p window) t)
+                       (window-on-all-spaces-p window))
+                (progn (setf (window-on-all-spaces-p window) nil)
+                       (not (window-on-all-spaces-p window)))))
     (close-window window))
   (let ((window (make-window :title "appearance" :width 300 :height 200 :activate nil)))
     (check "a window can be drawn dark or light"
