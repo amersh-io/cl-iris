@@ -32,6 +32,17 @@
              (no-such-protocol () t)))
     (check "a missing class is NIL when not required"
            (null (find-class* "CLIrisNoSuchClass" nil)))
+    (check "a handle keeps its value until its last owner releases it"
+           (let ((h (make-handle :payload)))
+             (retain-handle h)
+             (release-handle h)
+             (and (eq :payload (handle-value h))
+                  (progn (release-handle h) t)
+                  (not (nth-value 1 (handle-value h))))))
+    (check "take-handle forgets a handle at once"
+           (let ((h (make-handle :once)))
+             (and (eq :once (take-handle h))
+                  (not (nth-value 1 (take-handle h))))))
     (check "selectors are interned"
            (cffi:pointer-eq (selector "description") (selector "description")))
     (check "NSString round trip keeps non-ASCII text"

@@ -8,27 +8,11 @@
   "True when called on the process's main thread."
   (= 1 (cffi:foreign-funcall "pthread_main_np" :int)))
 
-;;; Work queued for the main thread is kept here under an integer id, and only
-;;; the id crosses into C: the garbage collector may move Lisp objects, so no
-;;; Lisp object's address is ever handed to the Objective-C side.
-
-(defvar *tasks* (make-hash-table))
-(defvar *tasks-lock* (sb-thread:make-mutex :name "cl-iris tasks"))
-(defvar *next-task-id* 0)
-
-(defun register-task (function)
-  (sb-thread:with-mutex (*tasks-lock*)
-    (let ((id (incf *next-task-id*)))
-      (setf (gethash id *tasks*) function)
-      id)))
-
-(defun take-task (id)
-  (sb-thread:with-mutex (*tasks-lock*)
-    (prog1 (gethash id *tasks*)
-      (remhash id *tasks*))))
+;;; Work queued for the main thread is registered as a handle (see
+;;; cl-iris/objc), and only the handle crosses into C.
 
 (cffi:defcallback run-task :void ((context :pointer))
-  (let ((task (take-task (cffi:pointer-address context))))
+  (let ((task (take-handle (cffi:pointer-address context))))
     (when task
       (with-cocoa-float-traps
         (with-autorelease-pool
@@ -37,7 +21,7 @@
 (defun dispatch-to-main (function)
   (cffi:foreign-funcall "dispatch_async_f"
                         :pointer (cffi:foreign-symbol-pointer "_dispatch_main_q")
-                        :pointer (cffi:make-pointer (register-task function))
+                        :pointer (cffi:make-pointer (make-handle function))
                         :pointer (cffi:callback run-task)
                         :void))
 

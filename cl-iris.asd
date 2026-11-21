@@ -16,6 +16,7 @@
   :serial t
   :components ((:file "package")
                (:file "conditions")
+               (:file "handles")
                (:file "runtime")
                (:file "messaging")
                (:file "geometry")

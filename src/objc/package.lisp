@@ -6,7 +6,13 @@
 
 (defpackage #:cl-iris/objc
   (:use #:cl)
-  (:export #:ns-point
+  (:export #:make-handle
+           #:handle-value
+           #:retain-handle
+           #:release-handle
+           #:take-handle
+           #:handle-count
+           #:ns-point
            #:ns-size
            #:ns-rect
            #:make-point

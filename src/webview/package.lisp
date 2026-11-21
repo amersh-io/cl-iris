@@ -7,7 +7,6 @@
 
 (defpackage #:cl-iris/webview
   (:use #:cl #:cl-iris/objc #:cl-iris/window)
-  (:import-from #:cl-iris/window #:register-task #:take-task)
   (:export #:make-webview
            #:destroy-webview
            #:load-url

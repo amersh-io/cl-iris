@@ -14,6 +14,12 @@
   (check "on-main signals the error again in the caller"
          (handler-case (progn (on-main (lambda () (error "boom"))) nil)
            (error (e) (search "boom" (princ-to-string e)))))
+  (check "on-main leaves no handles behind"
+         (let ((before (handle-count)))
+           (on-main (lambda () 1))
+           (on-main (lambda () 2) :wait nil)
+           (on-main (lambda () 3))
+           (= before (handle-count))))
   (check "queued work runs in order"
          (let ((log '()))
            (on-main (lambda () (push :first log)) :wait nil)

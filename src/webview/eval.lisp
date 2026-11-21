@@ -21,7 +21,7 @@
 
 (cffi:defcallback js-completion :void
     ((block :pointer) (result :pointer) (error :pointer))
-  (let ((function (take-task (cffi:mem-ref block :int64 32))))
+  (let ((function (take-handle (cffi:mem-ref block :int64 32))))
     ;; WebKit releases the block after calling it, so free it only later.
     (on-main (lambda () (cffi:foreign-free block)) :wait nil)
     (when function
@@ -39,7 +39,7 @@
           (cffi:mem-ref block :int32 12) 0
           (cffi:mem-ref block :pointer 16) (cffi:callback js-completion)
           (cffi:mem-ref block :pointer 24) (cffi:inc-pointer block +block-size+)
-          (cffi:mem-ref block :int64 32) (register-task function)
+          (cffi:mem-ref block :int64 32) (make-handle function)
           (cffi:mem-ref block :uint64 40) 0
           (cffi:mem-ref block :uint64 48) +block-size+)
     block))
