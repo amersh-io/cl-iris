@@ -119,6 +119,17 @@ AppKit animates."
                     (= (front) (cffi:pointer-address window))))))
     (close-window other)
     (close-window window))
+  (check "hex colors are read as sRGB components"
+         (and (equal '(1d0 0d0 0d0 1d0) (color-components "#f00"))
+              (equal '(0d0 0d0 1d0 1d0) (color-components "#0000ff"))
+              (equal '(1d0 1d0 1d0 0d0) (color-components "#ffffff00"))))
+  (check "list colors get an alpha of 1 when they have none"
+         (equal '(0.5d0 0.25d0 0d0 1d0) (color-components '(0.5 0.25 0))))
+  (check "malformed colors are refused"
+         (every (lambda (color)
+                  (handler-case (progn (color-components color) nil)
+                    (error () t)))
+                (list "#12" "#gggggg" '(2 0 0) "red" 42)))
   (let ((window (make-window :title "minimize and zoom" :width 300 :height 200 :activate nil)))
     (check "a window can be minimized and restored"
            (progn (minimize-window window)

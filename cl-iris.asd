@@ -38,6 +38,7 @@
                (:file "traps")
                (:file "dispatch")
                (:file "application")
+               (:file "color")
                (:file "attributes")
                (:file "window")))
 

@@ -46,4 +46,7 @@
            #:restore-window
            #:window-minimized-p
            #:window-maximized-p
-           #:window-fullscreen-p))
+           #:window-fullscreen-p
+           #:color-components
+           #:ns-color
+           #:ns-color-components))
