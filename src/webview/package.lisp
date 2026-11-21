@@ -21,6 +21,7 @@
            #:webview-incognito-p
            #:webview-background-throttling
            #:webview-proxy-count
+           #:webview-accepts-first-mouse-p
            #:eval-js
            #:javascript-error
            #:request

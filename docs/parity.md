@@ -42,7 +42,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_incognito` | `:incognito` (non-persistent data store) | done | "incognito webviews do not share storage" |
 | `with_javascript_disabled` | `:javascript nil` | done | "with javascript off, the page's scripts do not run" |
 | `with_back_forward_navigation_gestures` | `:navigation-gestures`, `(setf webview-navigation-gestures-p)` | done | "navigation gestures can be switched on and off" |
-| `with_accept_first_mouse` | `:accept-first-mouse` | planned | |
+| `with_accept_first_mouse` | `:accept-first-mouse`, `(setf webview-accepts-first-mouse-p)` | done | "accept-first-mouse lets the first click through" |
 | `with_background_throttling` | `:background-throttling` (macOS 14+) | done | "background throttling can be turned off" |
 | `with_proxy_config` | `:proxy` (macOS 14+) | done | "a webview's requests really go through its proxy", "a SOCKS5 proxy is set on the webview's store" |
 | `with_hotkeys_zoom` | — | out of scope | unsupported by wry on macOS |

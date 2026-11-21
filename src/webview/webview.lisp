@@ -39,6 +39,8 @@ With AUTOPLAY, media plays without waiting for a user gesture; with AUTOPLAY
 NIL, all media waits for one. With INCOGNITO, cookies, storage and caches
 stay in memory, apart from other webviews. With JAVASCRIPT NIL, pages run no
 scripts of their own (EVAL-JS and init scripts still run).
+With ACCEPT-FIRST-MOUSE, a click on the webview of an
+inactive window reaches the page as well as activating the window.
 BACKGROUND-THROTTLING is :SUSPEND, :THROTTLE or :NONE: what happens to the
 page while it is not visible (macOS 14 and later). PROXY, (:HTTP host port)
 or (:SOCKS5 host port), routes the webview's traffic through a proxy (macOS
@@ -126,7 +128,7 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
           do (send configuration "setURLSchemeHandler:forURLScheme:"
                    :pointer delegate :pointer (ns-string scheme) :void))
     (configure configuration options)
-    (let ((webview (send (send (find-class* "WKWebView") "alloc")
+    (let ((webview (send (send (webview-class) "alloc")
                          "initWithFrame:configuration:"
                          (:struct ns-rect)
                          (send (send window "contentView") "frame"

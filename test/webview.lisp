@@ -414,6 +414,18 @@ small page; return the port."
         (destroy-webview other))
       (check "webviews have no proxy by default"
              (zerop (webview-proxy-count webview)))
+      (let ((other (make-webview window :accept-first-mouse t)))
+        (check "accept-first-mouse lets the first click through"
+               (webview-accepts-first-mouse-p other))
+        (check "accept-first-mouse can change on a live webview"
+               (progn (setf (webview-accepts-first-mouse-p other) nil)
+                      (not (webview-accepts-first-mouse-p other))))
+        (destroy-webview other))
+      (check "webviews do not take the first click by default"
+             (not (webview-accepts-first-mouse-p webview)))
+      (check "webviews are made from our WKWebView subclass"
+             (on-main (lambda () (and (kind-of-p webview "WKWebView")
+                                      (kind-of-p webview "CLIrisWebView")))))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

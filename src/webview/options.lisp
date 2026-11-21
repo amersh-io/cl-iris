@@ -242,3 +242,13 @@ from every other webview, and forgets them when it goes."
        (if (responds-to-p store "proxyConfigurations")
            (send (send store "proxyConfigurations") "count" :unsigned-long)
            0)))))
+
+(defun webview-accepts-first-mouse-p (webview)
+  "True if a click on WEBVIEW in an inactive window also reaches the page."
+  (on-main (lambda () (send webview "acceptsFirstMouse:" :pointer (cffi:null-pointer) :bool))))
+
+(defun (setf webview-accepts-first-mouse-p) (accept webview)
+  (on-main (lambda () (setf (getf (gethash (cffi:pointer-address webview) *routes*)
+                                  :accept-first-mouse)
+                            (and accept t))))
+  accept)

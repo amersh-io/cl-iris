@@ -29,3 +29,13 @@
 
 (defun delegate-class ()
   (find-class* "CLIrisWebViewDelegate"))
+
+;;; Our WKWebView subclass, for behaviour WebKit only offers by overriding.
+
+(define-objc-class "CLIrisWebView" (:superclass "WKWebView")
+  (:method "acceptsFirstMouse:" :bool (self (event :pointer))
+    (declare (ignore event))
+    (and (route self :accept-first-mouse) t)))
+
+(defun webview-class ()
+  (find-class* "CLIrisWebView"))
