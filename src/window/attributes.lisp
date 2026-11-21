@@ -17,3 +17,29 @@ corner in place."
    (lambda ()
      (send window "setContentSize:" (:struct ns-size) (make-size width height) :void)))
   nil)
+
+(defun window-frame (window)
+  "Return the X, Y, width and height of WINDOW's whole frame, title bar
+included."
+  (on-main
+   (lambda ()
+     (let ((frame (send window "frame" (:struct ns-rect))))
+       (values (rect-x frame) (rect-y frame) (rect-width frame) (rect-height frame))))))
+
+(defun window-position (window)
+  "Return the X and Y of WINDOW's bottom-left corner."
+  (multiple-value-bind (x y) (window-frame window)
+    (values x y)))
+
+(defun move-window (window x y)
+  "Put WINDOW's bottom-left corner at X, Y."
+  (on-main
+   (lambda ()
+     (send window "setFrameOrigin:" (:struct ns-point) (make-point x y) :void)))
+  nil)
+
+(defun center-window (window)
+  "Put WINDOW in the middle of its screen, a little above center as macOS
+places new windows."
+  (on-main (lambda () (send window "center" :void)))
+  nil)

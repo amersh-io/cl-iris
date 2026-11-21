@@ -23,4 +23,8 @@
            #:window-number
            #:window-title
            #:window-content-size
-           #:resize-window))
+           #:resize-window
+           #:window-frame
+           #:window-position
+           #:move-window
+           #:center-window))

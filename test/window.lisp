@@ -49,6 +49,23 @@
     (check "a window can be resized"
            (progn (resize-window window 500 300)
                   (equal '(500d0 300d0) (multiple-value-list (window-content-size window)))))
+    (check "a window can be moved"
+           (progn (move-window window 120 140)
+                  (equal '(120d0 140d0) (multiple-value-list (window-position window)))))
+    (check "the frame includes the title bar"
+           (multiple-value-bind (x y width height) (window-frame window)
+             (declare (ignore x y))
+             (and (= width 500) (> height 300))))
+    (check "centering moves a window into the middle of its screen"
+           (progn (center-window window)
+                  (let ((x (window-position window)))
+                    (multiple-value-bind (sx sy screen-width)
+                        (on-main (lambda ()
+                                   (let ((frame (send (send window "screen") "visibleFrame"
+                                                      (:struct ns-rect))))
+                                     (values (rect-x frame) (rect-y frame) (rect-width frame)))))
+                      (declare (ignore sy))
+                      (< (abs (- (+ x 250) (+ sx (/ screen-width 2)))) 2)))))
     (close-window window)))
 
 (defun application-tests (checks &key (timeout 60))
