@@ -332,10 +332,16 @@ proxy -- with what RESPOND returns for its request line; return the port."
                (progn
                  (eval-js other "iris.invoke('x').then(r => window.pair = r.join('+')); 0")
                  (wait-until (lambda () (equal "x+x" (eval-js other "window.pair || ''"))))))
-        (check "an error in on-invoke rejects the Promise with its message"
-               (progn
-                 (eval-js other "iris.invoke('boom').catch(e => window.failure = String(e.message || e)); 0")
-                 (wait-until (lambda () (search "kaboom" (eval-js other "window.failure || ''"))))))
+        (check "an error in on-invoke rejects the Promise with its message, and is reported"
+               (let ((reported nil)
+                     (old *error-reporter*))
+                 (setf *error-reporter* (lambda (where c) (declare (ignore where)) (setf reported c)))
+                 (unwind-protect
+                      (progn
+                        (eval-js other "iris.invoke('boom').catch(e => window.failure = String(e.message || e)); 0")
+                        (and (wait-until (lambda () (search "kaboom" (eval-js other "window.failure || ''"))))
+                             (search "kaboom" (princ-to-string reported))))
+                   (setf *error-reporter* old))))
         (destroy-webview other))
       (check "an asynchronous on-invoke answers later from another thread"
              (let ((other (make-webview
