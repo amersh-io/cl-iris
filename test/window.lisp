@@ -130,6 +130,24 @@ AppKit animates."
                   (handler-case (progn (color-components color) nil)
                     (error () t)))
                 (list "#12" "#gggggg" '(2 0 0) "red" 42)))
+  (let ((window (make-window :title "colors" :width 300 :height 200 :activate nil)))
+    (check "a window's opacity can be changed"
+           (progn (setf (window-alpha window) 0.5)
+                  (prog1 (= 0.5d0 (window-alpha window))
+                    (setf (window-alpha window) 1))))
+    (check "a window's background color can be set and read back"
+           (progn (setf (window-background-color window) "#336699")
+                  (every (lambda (a b) (< (abs (- a b)) 1d-3))
+                         (window-background-color window)
+                         (color-components "#336699"))))
+    (check "a window can be made transparent"
+           (progn (setf (window-transparent-p window) t)
+                  (and (window-transparent-p window)
+                       (zerop (fourth (window-background-color window))))))
+    (check "a transparent window can be made opaque again"
+           (progn (setf (window-transparent-p window) nil)
+                  (not (window-transparent-p window))))
+    (close-window window))
   (let ((window (make-window :title "minimize and zoom" :width 300 :height 200 :activate nil)))
     (check "a window can be minimized and restored"
            (progn (minimize-window window)

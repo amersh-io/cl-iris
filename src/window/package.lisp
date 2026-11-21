@@ -49,4 +49,7 @@
            #:window-fullscreen-p
            #:color-components
            #:ns-color
-           #:ns-color-components))
+           #:ns-color-components
+           #:window-alpha
+           #:window-background-color
+           #:window-transparent-p))

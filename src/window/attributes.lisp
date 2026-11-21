@@ -237,3 +237,41 @@ and finishes a moment after this returns."
              :void)
        (send window "toggleFullScreen:" :pointer (cffi:null-pointer) :void))))
   fullscreen)
+
+;;; Opacity, background and transparency
+
+(defun window-alpha (window)
+  "WINDOW's opacity as a whole, from 0 (invisible) to 1."
+  (on-main (lambda () (send window "alphaValue" :double))))
+
+(defun (setf window-alpha) (alpha window)
+  (let ((alpha (float alpha 1d0)))
+    (on-main (lambda () (send window "setAlphaValue:" :double alpha :void))))
+  alpha)
+
+(defun window-background-color (window)
+  "WINDOW's background color as a list of red, green, blue and alpha."
+  (on-main (lambda () (ns-color-components (send window "backgroundColor")))))
+
+(defun (setf window-background-color) (color window)
+  "Set WINDOW's background color: \"#rrggbb\", (r g b [a]) or :CLEAR."
+  (color-components color)              ; check it here, in the caller
+  (on-main (lambda () (send window "setBackgroundColor:" :pointer (ns-color color) :void)))
+  color)
+
+(defun window-transparent-p (window)
+  "True when WINDOW's background lets what is behind it show through."
+  (on-main (lambda () (not (send window "isOpaque" :bool)))))
+
+(defun (setf window-transparent-p) (transparent window)
+  "Make WINDOW's background see-through (its content and title bar are
+drawn as before), or opaque again with the standard background."
+  (on-main
+   (lambda ()
+     (send window "setOpaque:" :bool (not transparent) :void)
+     (send window "setBackgroundColor:"
+           :pointer (if transparent
+                        (send (find-class* "NSColor") "clearColor")
+                        (send (find-class* "NSColor") "windowBackgroundColor"))
+           :void)))
+  transparent)
