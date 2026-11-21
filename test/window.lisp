@@ -71,7 +71,26 @@
                   (set-window-max-size window 900 700)
                   (and (equal '(300d0 200d0) (multiple-value-list (window-min-size window)))
                        (equal '(900d0 700d0) (multiple-value-list (window-max-size window))))))
-    (close-window window)))
+    (check "a new window has the default style"
+           (equal '(:titled :closable :miniaturizable :resizable) (window-style window)))
+    (check "a window can be made fixed in size"
+           (progn (setf (window-resizable-p window) nil)
+                  (and (not (window-resizable-p window))
+                       (not (member :resizable (window-style window))))))
+    (check "a window without decorations has no title bar"
+           (progn (setf (window-decorated-p window) nil)
+                  (multiple-value-bind (x y width height) (window-frame window)
+                    (declare (ignore x y width))
+                    (and (not (window-decorated-p window))
+                         (= height (nth-value 1 (window-content-size window)))))))
+    (close-window window))
+  (let ((window (make-window :title "borderless" :style '() :activate nil)))
+    (check "make-window :style NIL opens a borderless window"
+           (null (window-style window)))
+    (close-window window))
+  (check "an unknown style keyword is refused"
+         (handler-case (progn (make-window :style '(:wobbly) :activate nil) nil)
+           (error (e) (search "WOBBLY" (princ-to-string e))))))
 
 (defun application-tests (checks &key (timeout 60))
   "Call each of CHECKS on a worker thread while this, the main thread, runs the

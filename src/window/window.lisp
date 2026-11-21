@@ -4,23 +4,22 @@
 
 ;;; Windows
 
-(defconstant +window-style+ (logior 1 2 4 8)
-  "Titled, closable, miniaturizable and resizable.")
-
 (defconstant +backing-store-buffered+ 2)
 
 (defun make-window (&key (title "") (x 200) (y 200) (width 800) (height 600)
-                      (activate t))
+                      (style *default-style*) (activate t))
   "Open a window whose content area is WIDTH by HEIGHT points, with its
-bottom-left corner at X, Y on the screen, and return it. With ACTIVATE, the
-application is brought to the front; without it, the window opens without
-taking focus from other applications."
+bottom-left corner at X, Y on the screen, and return it. STYLE is a list of
+keywords as for WINDOW-STYLE; the default has a title bar with all three
+buttons and can be resized, and NIL makes a borderless window. With
+ACTIVATE, the application is brought to the front; without it, the window
+opens without taking focus from other applications."
   (on-main
    (lambda ()
      (let ((window (send (send (find-class* "NSWindow") "alloc")
                          "initWithContentRect:styleMask:backing:defer:"
                          (:struct ns-rect) (make-rect x y width height)
-                         :unsigned-long +window-style+
+                         :unsigned-long (style-mask style)
                          :unsigned-long +backing-store-buffered+
                          ;; BOOL as a byte: once a struct is passed by value
                          ;; the call goes through libffi, which rejects :BOOL.

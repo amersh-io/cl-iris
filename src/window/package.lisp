@@ -31,4 +31,7 @@
            #:window-min-size
            #:set-window-min-size
            #:window-max-size
-           #:set-window-max-size))
+           #:set-window-max-size
+           #:window-style
+           #:window-resizable-p
+           #:window-decorated-p))

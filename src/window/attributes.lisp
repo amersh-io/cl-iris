@@ -70,3 +70,57 @@ area to."
    (lambda ()
      (send window "setContentMaxSize:" (:struct ns-size) (make-size width height) :void)))
   nil)
+
+;;; Style: the title bar, its buttons, and whether the user can resize.
+
+(defparameter *style-bits*
+  '((:titled . 1)
+    (:closable . 2)
+    (:miniaturizable . 4)
+    (:resizable . 8)
+    (:full-size-content-view . 32768))
+  "NSWindowStyleMask bits by keyword. A window with none of them is borderless.")
+
+(defparameter *default-style* '(:titled :closable :miniaturizable :resizable))
+
+(defun style-mask (style)
+  (reduce #'logior style
+          :key (lambda (keyword)
+                 (or (cdr (assoc keyword *style-bits*))
+                     (error "Unknown window style ~S; expected one of ~S."
+                            keyword (mapcar #'car *style-bits*))))
+          :initial-value 0))
+
+(defun style-keywords (mask)
+  (loop for (keyword . bit) in *style-bits*
+        when (logtest bit mask) collect keyword))
+
+(defun window-style (window)
+  "Return WINDOW's style as a list of keywords from :TITLED, :CLOSABLE,
+:MINIATURIZABLE, :RESIZABLE and :FULL-SIZE-CONTENT-VIEW."
+  (on-main (lambda () (style-keywords (send window "styleMask" :unsigned-long)))))
+
+(defun (setf window-style) (style window)
+  (let ((mask (style-mask style)))
+    (on-main (lambda () (send window "setStyleMask:" :unsigned-long mask :void))))
+  style)
+
+(defun update-style (window keyword on)
+  (let ((style (window-style window)))
+    (setf (window-style window)
+          (if on (adjoin keyword style) (remove keyword style)))))
+
+(defun window-resizable-p (window)
+  (and (member :resizable (window-style window)) t))
+
+(defun (setf window-resizable-p) (resizable window)
+  (update-style window :resizable resizable)
+  resizable)
+
+(defun window-decorated-p (window)
+  "True when WINDOW has a title bar; a window without one is borderless."
+  (and (member :titled (window-style window)) t))
+
+(defun (setf window-decorated-p) (decorated window)
+  (update-style window :titled decorated)
+  decorated)
