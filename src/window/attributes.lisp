@@ -375,3 +375,28 @@ sharing (it shows as blank there), or let it be captured again."
                                           (logandc2 behavior +collection-can-join-all-spaces+))
                        :void))))
   all)
+
+;;; Aspect ratio
+
+(defun window-aspect-ratio (window)
+  "The width to height ratio the user's resizing keeps WINDOW's content
+area at, or NIL when it is free."
+  (on-window window
+             (lambda ()
+               (let ((ratio (send window "contentAspectRatio" (:struct ns-size))))
+                 (unless (or (zerop (size-width ratio)) (zerop (size-height ratio)))
+                   (/ (size-width ratio) (size-height ratio)))))))
+
+(defun (setf window-aspect-ratio) (ratio window)
+  "Keep WINDOW's content area at RATIO (width / height) while the user
+resizes it, or let it change freely with NIL."
+  (check-type ratio (or null (real (0))))
+  (on-window window
+             (lambda ()
+               (if ratio
+                   (send window "setContentAspectRatio:"
+                         (:struct ns-size) (make-size (* 1000 ratio) 1000) :void)
+                   ;; Setting the resize increments clears the ratio.
+                   (send window "setContentResizeIncrements:"
+                         (:struct ns-size) (make-size 1 1) :void))))
+  ratio)

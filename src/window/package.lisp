@@ -66,6 +66,7 @@
            #:window-ignores-mouse-p
            #:window-content-protected-p
            #:window-on-all-spaces-p
+           #:window-aspect-ratio
            #:run-after
            #:run-every
            #:cancel-timer

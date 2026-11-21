@@ -161,6 +161,12 @@ AppKit animates."
            (and (not (window-content-protected-p window))
                 (progn (setf (window-content-protected-p window) t)
                        (window-content-protected-p window))))
+    (check "a window's content can be held to an aspect ratio"
+           (and (null (window-aspect-ratio window))
+                (progn (setf (window-aspect-ratio window) 16/9)
+                       (< (abs (- (window-aspect-ratio window) 16/9)) 1d-6))
+                (progn (setf (window-aspect-ratio window) nil)
+                       (null (window-aspect-ratio window)))))
     (check "a window can be shown on every Space"
            (and (not (window-on-all-spaces-p window))
                 (progn (setf (window-on-all-spaces-p window) t)
