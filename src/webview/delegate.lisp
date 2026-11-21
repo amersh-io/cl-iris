@@ -41,6 +41,8 @@
       (self (webview :pointer) (navigation :pointer) (error :pointer))
     (declare (ignore navigation))
     (page-load webview :failed error))
+  (:method "webViewWebContentProcessDidTerminate:" :void (self (webview :pointer))
+    (web-process-terminated webview))
   (:method "webView:didFailNavigation:withError:" :void
       (self (webview :pointer) (navigation :pointer) (error :pointer))
     (declare (ignore navigation))

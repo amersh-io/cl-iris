@@ -104,6 +104,8 @@ ON-NAVIGATE is called with the URL of each navigation before it happens,
 including the first load and links; it returns true to let it proceed.
 ON-PAGE-LOAD is called with :STARTED or :FINISHED and the URL as a page
 loads, or with :FAILED, the URL and an error message.
+ON-WEB-PROCESS-TERMINATED is called with the webview when WebKit's content
+process for it dies; without it, the page is reloaded.
 
 With FOCUSED, it takes the keyboard focus. With ACCEPT-FIRST-MOUSE, a click on the webview of an
 inactive window reaches the page as well as activating the window.

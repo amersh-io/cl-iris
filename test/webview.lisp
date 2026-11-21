@@ -22,7 +22,8 @@
 ;;; A tiny HTTP proxy, to see a webview's traffic really go through one.
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (require :sb-bsd-sockets))
+  (require :sb-bsd-sockets)
+  (require :sb-posix))
 
 (defvar *proxied-lines* '()
   "The request lines the test proxy saw, newest first.")
@@ -490,6 +491,35 @@ small page; return the port."
                (progn (load-url other "https://cl-iris.invalid/")
                       (wait-until (lambda () (eq :failed (first (first events)))))))
         (destroy-webview other))
+      ;; Kill the content process as a crash would. _webProcessIdentifier is
+      ;; WebKit's own testing hook, not public API.
+      (when (on-main (lambda () (responds-to-p webview "_webProcessIdentifier")))
+        (flet ((kill (view)
+                 (sb-posix:kill (on-main (lambda () (send view "_webProcessIdentifier" :int)))
+                                sb-posix:sigkill)))
+          (let* ((terminated nil)
+                 (outcome nil)
+                 (other (make-webview window :html "<title>alive</title>"
+                                             :on-web-process-terminated
+                                             (lambda (view) (setf terminated view)))))
+            (wait-until (lambda () (equal "alive" (eval-js other "document.title"))))
+            (eval-js other "new Promise(() => {})" :wait nil
+                     :callback (lambda (value message) (setf outcome (list value message))))
+            (kill other)
+            (check "on-web-process-terminated hears the content process die"
+                   (wait-until (lambda () (and terminated (cffi:pointer-eq terminated other)))))
+            (check "an eval-js pending when the process dies ends with an error"
+                   (wait-until (lambda () (and outcome (second outcome)))))
+            (destroy-webview other))
+          (let ((other (make-webview window :on-request #'serve :url "iris://app/index.html")))
+            (wait-until (lambda () (equal "iris" (eval-js other "document.title"))))
+            (eval-js other "window.marker = 1; 0")
+            (kill other)
+            (check "without a handler, a webview whose process died reloads"
+                   (wait-until (lambda () (ignore-errors
+                                           (and (equal "iris" (eval-js other "document.title"))
+                                                (eq :null (eval-js other "window.marker ?? null")))))))
+            (destroy-webview other))))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

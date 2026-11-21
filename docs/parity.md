@@ -118,6 +118,6 @@ Status: **done** (with the test that covers it), **planned**, or
 | `alert`, `confirm`, `prompt` | WKUIDelegate panels | planned | |
 | links with `target=_blank` | routed to `:on-new-window` or opened in place | planned | |
 | `<input type=file>` | open panel | planned | |
-| web content process crash | `:on-web-process-terminated`, reload | planned | |
+| web content process crash | `:on-web-process-terminated`, else reload | done | "on-web-process-terminated hears the content process die", "without a handler, a webview whose process died reloads", "an eval-js pending when the process dies ends with an error" |
 | Objective-C exceptions | reported before the process aborts | done | "an uncaught exception is reported with its name and reason" |
 | tests that never steal focus | `:activation-policy :accessory`, `:activate nil` | done | every application test |

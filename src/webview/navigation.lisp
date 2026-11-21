@@ -38,3 +38,15 @@ and true, or NIL and NIL when there is no handler or it signalled (reported)."
   (apply #'call-handler webview :on-page-load "on-page-load"
          event (url-string (send webview "URL"))
          (when error (list (lisp-string (send error "localizedDescription"))))))
+
+;;; The web content process
+
+(defun web-process-terminated (webview)
+  "WebKit's content process for WEBVIEW died (it crashed, or the system
+reclaimed it): call :ON-WEB-PROCESS-TERMINATED, or reload by default."
+  (multiple-value-bind (value handled)
+      (call-handler webview :on-web-process-terminated "on-web-process-terminated" webview)
+    (declare (ignore value))
+    (unless (route webview :on-web-process-terminated)
+      (send webview "reload" :pointer))
+    handled))
