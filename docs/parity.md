@@ -18,7 +18,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_id` | the webview object is its own identity | out of scope | Lisp code holds the object itself |
 | `with_url` | `make-webview :url` | done | "a page served from Lisp posts a message back" |
 | `with_url_and_headers`, `with_headers` | `make-webview :headers` | planned | |
-| `with_html` | `make-webview :html` | planned | `load-html` exists |
+| `with_html` | `make-webview :html` (and `:base-url`) | done | "a webview can start from a string of HTML" |
 | `with_initialization_script` | `:init-scripts` | planned | |
 | `with_initialization_script_for_main_only` | `:init-scripts` with a main-frame flag | planned | |
 | `with_custom_protocol` | `:protocols` (or `:on-request` for one) | done | "fetch reaches the Lisp scheme handler", "one webview answers several schemes", "a request carries its method, headers and body" |
@@ -57,7 +57,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `evaluate_script_with_callback` | `eval-js` (waits) or `:callback` | done | "eval-js returns strings", "eval-js signals JavaScript errors" |
 | `load_url` | `load-url` | done | "a page served from Lisp posts a message back" |
 | `load_url_with_headers` | `load-url :headers` | planned | |
-| `load_html` | `load-html` | planned | test still to come |
+| `load_html` | `load-html` | done | "an answer to a stopped request is dropped, not sent" |
 | `url` | `webview-url` | planned | |
 | `reload`, `go_back`, `go_forward` | `reload`, `go-back`, `go-forward` | planned | |
 | `can_go_back`, `can_go_forward` | `can-go-back-p`, `can-go-forward-p` | planned | |

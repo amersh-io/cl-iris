@@ -141,6 +141,12 @@
                            ;; Still alive: the dropped answer never reached WebKit.
                            (prog1 (eql 3 (eval-js other "1 + 2"))
                              (destroy-webview other))))))
+      (check "a webview can start from a string of HTML"
+             (let ((other (make-webview window :html "<title>inline</title>"
+                                               :base-url "https://example.invalid/")))
+               (prog1 (and (wait-until (lambda () (equal "inline" (eval-js other "document.title"))))
+                           (equal "https://example.invalid/" (eval-js other "location.href")))
+                 (destroy-webview other))))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"
              (handler-case (progn (make-webview window :protocols (list (list "https" #'serve))) nil)
                (error (e) (search "itself" (princ-to-string e)))))
