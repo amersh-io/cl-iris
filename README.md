@@ -140,4 +140,5 @@ An error inside `on-main` is signalled again in the thread that called it.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+Apache License 2.0 — see [LICENSE](LICENSE). If you redistribute cl-iris
+or work derived from it, carry the attribution in [NOTICE](NOTICE) along with it.

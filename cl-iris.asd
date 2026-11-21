@@ -2,7 +2,7 @@
 
 (defsystem "cl-iris"
   :description "Native windows and webviews for Common Lisp (macOS first)."
-  :license "MIT"
+  :license "Apache-2.0"
   :version "0.0.1"
   :homepage "https://github.com/amersh-io/cl-iris"
   :depends-on ("cl-iris/objc" "cl-iris/window" "cl-iris/webview")
@@ -10,27 +10,27 @@
 
 (defsystem "cl-iris/objc"
   :description "A thin CFFI binding to the Objective-C runtime."
-  :license "MIT"
+  :license "Apache-2.0"
   :depends-on ("cffi")
   :pathname "src/"
   :components ((:file "objc")))
 
 (defsystem "cl-iris/window"
   :description "The NSApplication loop on the main thread, NSWindow, and GCD."
-  :license "MIT"
+  :license "Apache-2.0"
   :depends-on ("cl-iris/objc" "cffi-libffi")
   :pathname "src/"
   :components ((:file "window")))
 
 (defsystem "cl-iris/webview"
   :description "WKWebView with JavaScript <-> Lisp messaging and custom URL schemes."
-  :license "MIT"
+  :license "Apache-2.0"
   :depends-on ("cl-iris/window")
   :pathname "src/"
   :components ((:file "webview")))
 
 (defsystem "cl-iris/test"
-  :license "MIT"
+  :license "Apache-2.0"
   :depends-on ("cl-iris/objc" "cl-iris/window" "cl-iris/webview")
   :pathname "test/"
   :serial t
