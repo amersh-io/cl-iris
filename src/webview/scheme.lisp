@@ -176,8 +176,9 @@ answer is dropped; answering twice is an error, reported on the main thread."
     (assoc scheme (route webview :protocols) :test #'string=)))
 
 (defun start-task (webview task)
-  (destructuring-bind (&optional scheme handler &key async) (protocol webview task)
-    (declare (ignore scheme))
+  (let* ((entry (protocol webview task))
+         (handler (second entry))
+         (async (getf (cddr entry) :async)))
     (let ((request (task-request task))
           (id (open-task task)))
       (flet ((failed (c)
