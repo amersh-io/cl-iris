@@ -105,6 +105,42 @@
                            (progn (load-url other "beta://x/")
                                   (wait-until (lambda () (equal "b" (eval-js other "document.title"))))))
                  (destroy-webview other))))
+      (check "an asynchronous handler answers later from another thread"
+             (let ((other (make-webview
+                           window
+                           :protocols
+                           (list (list "later"
+                                       (lambda (request responder)
+                                         (sb-thread:make-thread
+                                          (lambda ()
+                                            (sleep 0.2)
+                                            (respond responder
+                                                     (format nil "<title>~A</title>"
+                                                             (request-url request))))))
+                                       :async t)))))
+               (load-url other "later://x/")
+               (prog1 (wait-until (lambda () (equal "later://x/" (eval-js other "document.title"))))
+                 (destroy-webview other))))
+      (check "an answer to a stopped request is dropped, not sent"
+             (let* ((pending nil)
+                    (other (make-webview
+                            window
+                            :protocols (list (list "never"
+                                                   (lambda (request responder)
+                                                     (declare (ignore request))
+                                                     (setf pending responder))
+                                                   :async t)))))
+               (load-html other "<title>host</title>" :base-url "never://host/")
+               (wait-until (lambda () (equal "host" (eval-js other "document.title"))))
+               (eval-js other "window.ctl = new AbortController(); fetch('never://host/slow', {signal: ctl.signal}).catch(() => {}); 0")
+               (and (wait-until (lambda () pending))
+                    (responder-open-p pending)
+                    (progn (eval-js other "ctl.abort(); 0")
+                           (wait-until (lambda () (not (responder-open-p pending)))))
+                    (progn (respond pending "too late")
+                           ;; Still alive: the dropped answer never reached WebKit.
+                           (prog1 (eql 3 (eval-js other "1 + 2"))
+                             (destroy-webview other))))))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"
              (handler-case (progn (make-webview window :protocols (list (list "https" #'serve))) nil)
                (error (e) (search "itself" (princ-to-string e)))))

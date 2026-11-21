@@ -13,11 +13,13 @@ ON-MESSAGE is called on the main thread with each value a page posts to
 window.webkit.messageHandlers.iris, converted with OBJC->LISP.
 
 PROTOCOLS lists custom URL schemes answered by Lisp, each as
-(SCHEME HANDLER). HANDLER is called on the main thread with a REQUEST for
-each URL of SCHEME (e.g. \"iris://app/index.html\"). It returns the body, a
-string or a vector of octets, and optionally a content type (default
-text/html), a status (default 200) and further headers as an alist;
-returning NIL answers 404. ON-REQUEST is shorthand for one protocol named
+(SCHEME HANDLER &key ASYNC). HANDLER is called on the main thread with a
+REQUEST for each URL of SCHEME (e.g. \"iris://app/index.html\"). It returns
+the body, a string or a vector of octets, and optionally a content type
+(default text/html), a status (default 200) and further headers as an alist;
+returning NIL answers 404. With ASYNC, HANDLER is called with the REQUEST
+and a RESPONDER instead, returns at once, and answers later with RESPOND,
+from any thread. ON-REQUEST is shorthand for one synchronous protocol named
 SCHEME.
 
 If URL is given, it is loaded."
@@ -40,7 +42,7 @@ If URL is given, it is loaded."
 exception, which would abort the process, for a scheme it handles itself or
 one registered twice."
   (let ((seen '()))
-    (loop for (scheme handler) in protocols
+    (loop for (scheme handler . options) in protocols
           for name = (string-downcase scheme)
           do (when (member name seen :test #'string=)
                (error "The URL scheme ~S is given twice." scheme))
@@ -49,7 +51,7 @@ one registered twice."
                                     :pointer (ns-string name) :bool)))
                (error "WebKit handles the URL scheme ~S itself; choose another." scheme))
              (push name seen)
-          collect (list name handler))))
+          collect (list* name handler options))))
 
 (defun %make-webview (window options)
   (let ((configuration (send (send (find-class* "WKWebViewConfiguration") "alloc") "init"))

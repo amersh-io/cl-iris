@@ -25,7 +25,8 @@
     (start-task webview task))
   (:method "webView:stopURLSchemeTask:" :void
       (self (webview :pointer) (task :pointer))
-    (declare (ignore webview task))))
+    (declare (ignore webview))
+    (stop-task task)))
 
 (defun delegate-class ()
   (find-class* "CLIrisWebViewDelegate"))

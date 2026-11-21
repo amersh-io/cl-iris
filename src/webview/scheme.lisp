@@ -95,21 +95,87 @@ NIL for 404), then optionally CONTENT-TYPE, STATUS and HEADERS (an alist)."
                      (or content-type "text/html; charset=utf-8")
                      headers (to-octets body))))
 
-(defun protocol-handler (webview task)
-  "The handler WEBVIEW has for the scheme of TASK's URL."
+(defun protocol (webview task)
+  "The (SCHEME HANDLER . OPTIONS) entry WEBVIEW has for TASK's URL."
   (let ((scheme (string-downcase
                  (lisp-string (send (send (send task "request") "URL") "scheme")))))
-    (second (assoc scheme (route webview :protocols) :test #'string=))))
+    (assoc scheme (route webview :protocols) :test #'string=)))
+
+(defun internal-error (task)
+  (send-response task 500 "text/plain; charset=utf-8" '() (to-octets "Internal error")))
+
+;;; Asynchronous answers
+;;;
+;;; An asynchronous handler gets a RESPONDER and may answer later, from any
+;;; thread. WebKit may stop the task first (the page navigated away, a fetch
+;;; was aborted), and touching a stopped task raises an Objective-C exception,
+;;; which aborts the process. So the task is only ever touched on the main
+;;; thread, where WebKit also stops it, and only while it is still open.
+
+(defstruct (responder (:constructor %make-responder (task request)))
+  "The way an asynchronous protocol handler answers its request, once."
+  task
+  (request nil :read-only t)
+  (state :open))
+
+(setf (documentation 'responder-request 'function) "The REQUEST being answered.")
+
+(defvar *open-tasks* (make-hash-table)
+  "Responders still waiting to answer, by task address. Main thread only.")
+
+(defun close-responder (responder state)
+  (let ((task (responder-task responder)))
+    (remhash (cffi:pointer-address task) *open-tasks*)
+    (setf (responder-state responder) state
+          (responder-task responder) nil)
+    (release task)))
+
+(defun respond (responder body &key content-type status headers)
+  "Answer the request of RESPONDER, from any thread, with BODY (a string,
+octets, or NIL for 404) and optionally CONTENT-TYPE, STATUS and HEADERS (an
+alist). Returns at once. If WebKit has stopped the request meanwhile, the
+answer is dropped; answering twice is an error, reported on the main thread."
+  (on-main
+   (lambda ()
+     (ecase (responder-state responder)
+       (:open
+        (unwind-protect
+             (answer (responder-task responder) body content-type status headers)
+          (close-responder responder :answered)))
+       (:stopped nil)
+       (:answered
+        (error "The request for ~A was already answered."
+               (request-url (responder-request responder))))))
+   :wait nil)
+  nil)
+
+(defun responder-open-p (responder)
+  "True until RESPONDER has answered or WebKit has stopped its request."
+  (on-main (lambda () (eq :open (responder-state responder)))))
 
 (defun start-task (webview task)
-  (let ((handler (protocol-handler webview task))
-        (request (task-request task)))
-    (multiple-value-bind (body content-type status headers)
-        (handler-case (and handler (funcall handler request))
-          (serious-condition (c)
-            (report-error (format nil "on-request for ~A" (request-url request)) c)
-            (values :error)))
-      (if (eq body :error)
-          (send-response task 500 "text/plain; charset=utf-8" '()
-                         (to-octets "Internal error"))
-          (answer task body content-type status headers)))))
+  (destructuring-bind (&optional scheme handler &key async) (protocol webview task)
+    (declare (ignore scheme))
+    (let ((request (task-request task)))
+      (flet ((failed (c)
+               (report-error (format nil "the protocol handler for ~A" (request-url request)) c)
+               (internal-error task)))
+        (cond ((null handler) (answer task nil))
+              (async
+               (let ((responder (%make-responder (retain task) request)))
+                 (setf (gethash (cffi:pointer-address task) *open-tasks*) responder)
+                 (handler-case (funcall handler request responder)
+                   (serious-condition (c)
+                     (close-responder responder :answered)
+                     (failed c)))))
+              (t
+               (multiple-value-bind (body content-type status headers)
+                   (handler-case (funcall handler request)
+                     (serious-condition (c) (failed c) (values :error)))
+                 (unless (eq body :error)
+                   (answer task body content-type status headers)))))))))
+
+(defun stop-task (task)
+  (let ((responder (gethash (cffi:pointer-address task) *open-tasks*)))
+    (when responder
+      (close-responder responder :stopped))))

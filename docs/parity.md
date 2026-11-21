@@ -22,7 +22,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_initialization_script` | `:init-scripts` | planned | |
 | `with_initialization_script_for_main_only` | `:init-scripts` with a main-frame flag | planned | |
 | `with_custom_protocol` | `:protocols` (or `:on-request` for one) | done | "fetch reaches the Lisp scheme handler", "one webview answers several schemes", "a request carries its method, headers and body" |
-| `with_asynchronous_custom_protocol` | responder callable from any thread | planned | |
+| `with_asynchronous_custom_protocol` | `:protocols` entry with `:async t`, `respond` from any thread | done | "an asynchronous handler answers later from another thread", "an answer to a stopped request is dropped, not sent" |
 | `with_ipc_handler` | `:on-message` | done | "a message from JavaScript is answered by eval-js" |
 | `with_navigation_handler` | `:on-navigate` (allow or deny) | planned | |
 | `with_new_window_req_handler` | `:on-new-window` | planned | |

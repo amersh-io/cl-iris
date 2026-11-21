@@ -18,4 +18,8 @@
            #:request-method
            #:request-headers
            #:request-header
-           #:request-body))
+           #:request-body
+           #:responder
+           #:responder-request
+           #:responder-open-p
+           #:respond))
