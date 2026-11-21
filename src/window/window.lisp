@@ -14,23 +14,26 @@ keywords as for WINDOW-STYLE; the default has a title bar with all three
 buttons and can be resized, and NIL makes a borderless window. With
 ACTIVATE, the application is brought to the front; without it, the window
 opens without taking focus from other applications."
-  (on-main
-   (lambda ()
-     (let ((window (send (send (find-class* "NSWindow") "alloc")
-                         "initWithContentRect:styleMask:backing:defer:"
-                         (:struct ns-rect) (make-rect x y width height)
-                         :unsigned-long (style-mask style)
-                         :unsigned-long +backing-store-buffered+
-                         ;; BOOL as a byte: once a struct is passed by value
-                         ;; the call goes through libffi, which rejects :BOOL.
-                         :unsigned-char 0)))
-       ;; We release the window ourselves in CLOSE-WINDOW.
-       (send window "setReleasedWhenClosed:" :bool nil :void)
-       (send window "setTitle:" :pointer (ns-string title) :void)
-       (send window "makeKeyAndOrderFront:" :pointer (cffi:null-pointer) :void)
-       (when activate
-         (send (app) "activateIgnoringOtherApps:" :bool t :void))
-       window))))
+  (let ((window
+          (on-main
+           (lambda ()
+             (let ((window (send (send (find-class* "NSWindow") "alloc")
+                                 "initWithContentRect:styleMask:backing:defer:"
+                                 (:struct ns-rect) (make-rect x y width height)
+                                 :unsigned-long (style-mask style)
+                                 :unsigned-long +backing-store-buffered+
+                                 ;; BOOL as a byte: once a struct is passed by
+                                 ;; value the call goes through libffi, which
+                                 ;; rejects :BOOL.
+                                 :unsigned-char 0)))
+               ;; We release the window ourselves in CLOSE-WINDOW.
+               (send window "setReleasedWhenClosed:" :bool nil :void)
+               (send window "setTitle:" :pointer (ns-string title) :void)
+               (send window "makeKeyAndOrderFront:" :pointer (cffi:null-pointer) :void)
+               window)))))
+    (when activate
+      (activate-application))
+    window))
 
 (defun close-window (window)
   "Close WINDOW and release it."

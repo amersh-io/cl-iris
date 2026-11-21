@@ -90,6 +90,28 @@
                   (prog1 (eq :floating (window-level window))
                     (setf (window-level window) :normal))))
     (close-window window))
+  (let ((window (make-window :title "visibility" :activate nil))
+        (other (make-window :title "other" :activate nil)))
+    (check "a hidden window is not visible"
+           (progn (hide-window window)
+                  (not (window-visible-p window))))
+    (check "a shown window is visible again"
+           (progn (show-window window)
+                  (window-visible-p window)))
+    ;; Without activating, which tests must not do, the application has no
+    ;; key window; what focusing does then is bring the window to the front.
+    (check "focusing a window brings it in front of the application's others"
+           (flet ((front () (on-main (lambda ()
+                                       (cffi:pointer-address
+                                        (send (send (cl-iris/window::app) "orderedWindows")
+                                              "firstObject"))))))
+             (focus-window other :activate nil)
+             (let ((before (front)))
+               (focus-window window :activate nil)
+               (and (= before (cffi:pointer-address other))
+                    (= (front) (cffi:pointer-address window))))))
+    (close-window other)
+    (close-window window))
   (let ((window (make-window :title "borderless" :style '() :activate nil)))
     (check "make-window :style NIL opens a borderless window"
            (null (window-style window)))

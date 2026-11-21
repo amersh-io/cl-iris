@@ -149,3 +149,44 @@ area to."
                               level (mapcar #'car *levels*))))))
     (on-main (lambda () (send window "setLevel:" :long value :void))))
   level)
+
+;;; Showing, hiding and focusing
+
+(defun show-window (window)
+  "Show WINDOW in front of the application's other windows, without taking
+focus."
+  (on-main (lambda () (send window "orderFront:" :pointer (cffi:null-pointer) :void)))
+  nil)
+
+(defun hide-window (window)
+  "Take WINDOW off the screen without closing it."
+  (on-main (lambda () (send window "orderOut:" :pointer (cffi:null-pointer) :void)))
+  nil)
+
+(defun window-visible-p (window)
+  (on-main (lambda () (send window "isVisible" :bool))))
+
+(defun activate-application ()
+  "Bring the application in front of other applications."
+  (on-main
+   (lambda ()
+     (let ((app (app)))
+       ;; -activate replaces -activateIgnoringOtherApps: from macOS 14.
+       (if (responds-to-p app "activate")
+           (send app "activate" :void)
+           (send app "activateIgnoringOtherApps:" :bool t :void)))))
+  nil)
+
+(defun focus-window (window &key (activate t))
+  "Make WINDOW the one that receives keyboard input. With ACTIVATE, the
+application is also brought in front of other applications; without it the
+window becomes the application's key window for when it is next active."
+  (on-main (lambda () (send window "makeKeyAndOrderFront:" :pointer (cffi:null-pointer) :void)))
+  (when activate
+    (activate-application))
+  nil)
+
+(defun window-focused-p (window)
+  "True when WINDOW receives keyboard input: it is the key window of the
+application and the application is active."
+  (on-main (lambda () (send window "isKeyWindow" :bool))))

@@ -35,4 +35,10 @@
            #:window-style
            #:window-resizable-p
            #:window-decorated-p
-           #:window-level))
+           #:window-level
+           #:show-window
+           #:hide-window
+           #:window-visible-p
+           #:activate-application
+           #:focus-window
+           #:window-focused-p))
