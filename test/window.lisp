@@ -213,6 +213,7 @@ AppKit animates."
     (close-window window))
   (screen-checks)
   (application-checks)
+  (theme-checks)
   (window-event-checks)
   (timer-checks)
   (default-menu-checks)
@@ -383,6 +384,24 @@ replaces it."
                   (and (eventually (lambda () (not (application-hidden-p))))
                        (window-visible-p window))))
     (close-window window)))
+
+(defun theme-checks ()
+  (check "the system appearance is light or dark"
+         (member (system-appearance) '(:light :dark)))
+  (let ((seen '()))
+    (setf (theme-change-handler) (lambda (appearance) (push appearance seen)))
+    (unwind-protect
+         (check "a change of the system's appearance is reported"
+                (progn
+                  ;; Deliver it to the observer as the notification center
+                  ;; would; posting the real notification would reach every
+                  ;; application on the machine.
+                  (on-main (lambda ()
+                             (send cl-iris/window::*theme-observer* "themeChanged:"
+                                   :pointer (cffi:null-pointer) :void)))
+                  (and (eventually (lambda () seen))
+                       (eq (first seen) (system-appearance)))))
+      (setf (theme-change-handler) nil))))
 
 (defun screen-checks ()
   (let ((screens (screens)))

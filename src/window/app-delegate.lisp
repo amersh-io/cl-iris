@@ -41,3 +41,51 @@ clicks the Dock icon or opens the running application again.")
 whether the loop stops."
   (on-main (lambda () (send (app) "terminate:" :pointer (cffi:null-pointer) :void)))
   nil)
+
+;;; The system's light or dark appearance
+
+(defun system-appearance ()
+  "The appearance the user chose for the system: :LIGHT or :DARK."
+  (on-main
+   (lambda ()
+     (let ((style (send (send (find-class* "NSUserDefaults") "standardUserDefaults")
+                        "stringForKey:" :pointer (ns-string "AppleInterfaceStyle"))))
+       (if (and (not (cffi:null-pointer-p style))
+                (string-equal "Dark" (lisp-string style)))
+           :dark
+           :light)))))
+
+(defparameter *theme-notification* "AppleInterfaceThemeChangedNotification")
+
+(defvar *on-theme-change* nil)
+(defvar *theme-observer* nil)
+
+(define-objc-class "CLIrisThemeObserver" ()
+  (:method "themeChanged:" :void (self (notification :pointer))
+    (declare (ignore notification))
+    (when *on-theme-change*
+      (funcall *on-theme-change* (system-appearance)))))
+
+(defun distributed-center ()
+  (send (find-class* "NSDistributedNotificationCenter") "defaultCenter"))
+
+(defun theme-change-handler ()
+  *on-theme-change*)
+
+(defun (setf theme-change-handler) (handler)
+  "Call HANDLER on the main thread with :LIGHT or :DARK whenever the user
+switches the system's appearance. NIL stops the calls."
+  (on-main
+   (lambda ()
+     (setf *on-theme-change* handler)
+     (cond ((and handler (not *theme-observer*))
+            (setf *theme-observer* (send (send (find-class* "CLIrisThemeObserver") "alloc") "init"))
+            (send (distributed-center) "addObserver:selector:name:object:"
+                  :pointer *theme-observer* :pointer (selector "themeChanged:")
+                  :pointer (ns-string *theme-notification*) :pointer (cffi:null-pointer)
+                  :void))
+           ((and (not handler) *theme-observer*)
+            (send (distributed-center) "removeObserver:" :pointer *theme-observer* :void)
+            (release *theme-observer*)
+            (setf *theme-observer* nil)))))
+  handler)

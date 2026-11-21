@@ -71,6 +71,8 @@
            #:cancel-timer
            #:timer-cancelled-p
            #:quit-application
+           #:system-appearance
+           #:theme-change-handler
            #:dock-badge
            #:request-user-attention
            #:cancel-user-attention
