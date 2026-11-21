@@ -11,13 +11,14 @@
 (defsystem "cl-iris/objc"
   :description "A thin CFFI binding to the Objective-C runtime."
   :license "Apache-2.0"
-  :depends-on ("cffi")
+  :depends-on ("cffi" "cffi-libffi")
   :pathname "src/objc/"
   :serial t
   :components ((:file "package")
                (:file "conditions")
                (:file "runtime")
                (:file "messaging")
+               (:file "geometry")
                (:file "strings")
                (:file "pool")
                (:file "classes")))
@@ -25,7 +26,7 @@
 (defsystem "cl-iris/window"
   :description "The NSApplication loop on the main thread, NSWindow, and GCD."
   :license "Apache-2.0"
-  :depends-on ("cl-iris/objc" "cffi-libffi")
+  :depends-on ("cl-iris/objc")
   :pathname "src/window/"
   :serial t
   :components ((:file "package")

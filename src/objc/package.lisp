@@ -6,7 +6,21 @@
 
 (defpackage #:cl-iris/objc
   (:use #:cl)
-  (:export #:objc-error
+  (:export #:ns-point
+           #:ns-size
+           #:ns-rect
+           #:make-point
+           #:make-size
+           #:make-rect
+           #:point-x
+           #:point-y
+           #:size-width
+           #:size-height
+           #:rect-x
+           #:rect-y
+           #:rect-width
+           #:rect-height
+           #:objc-error
            #:objc-error-name
            #:no-such-class
            #:no-such-protocol

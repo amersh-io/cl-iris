@@ -41,7 +41,7 @@ Must be called on the main thread."
              :pointer (send (find-class* "NSEvent")
                             "otherEventWithType:location:modifierFlags:timestamp:windowNumber:context:subtype:data1:data2:"
                             :unsigned-long +event-type-application-defined+
-                            (:struct ns-point) (list 'x 0d0 'y 0d0)
+                            (:struct ns-point) (make-point 0 0)
                             :unsigned-long 0
                             :double 0d0
                             :long 0

@@ -36,6 +36,12 @@
            (cffi:pointer-eq (selector "description") (selector "description")))
     (check "NSString round trip keeps non-ASCII text"
            (string= "héllo, ☃" (lisp-string (ns-string "héllo, ☃"))))
+    (check "structs pass by value and come back"
+           (let ((rect (send (send (find-class* "NSValue") "valueWithRect:"
+                                   (:struct ns-rect) (make-rect 1 2 30 40))
+                             "rectValue" (:struct ns-rect))))
+             (equal '(1d0 2d0 30d0 40d0)
+                    (list (rect-x rect) (rect-y rect) (rect-width rect) (rect-height rect)))))
     (check "send with an integer return type"
            (= 5 (send (ns-string "hello") "length" :unsigned-long)))
     (let ((object (make-test-object)))

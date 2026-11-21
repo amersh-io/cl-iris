@@ -19,7 +19,7 @@ taking focus from other applications."
    (lambda ()
      (let ((window (send (send (find-class* "NSWindow") "alloc")
                          "initWithContentRect:styleMask:backing:defer:"
-                         (:struct ns-rect) (rect x y width height)
+                         (:struct ns-rect) (make-rect x y width height)
                          :unsigned-long +window-style+
                          :unsigned-long +backing-store-buffered+
                          ;; BOOL as a byte: once a struct is passed by value
@@ -53,4 +53,4 @@ taking focus from other applications."
   (on-main
    (lambda ()
      (let ((frame (send (send window "contentView") "frame" (:struct ns-rect))))
-       (values (getf frame 'width) (getf frame 'height))))))
+       (values (rect-width frame) (rect-height frame))))))

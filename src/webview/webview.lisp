@@ -32,9 +32,9 @@ If URL is given, it is loaded."
             :pointer delegate :pointer (ns-string scheme) :void))
     (let ((webview (send (send (find-class* "WKWebView") "alloc")
                          "initWithFrame:configuration:"
-                         (:struct cl-iris/window::ns-rect)
+                         (:struct ns-rect)
                          (send (send window "contentView") "frame"
-                               (:struct cl-iris/window::ns-rect))
+                               (:struct ns-rect))
                          :pointer configuration)))
       ;; The configuration and its user content controller retain what they need.
       (send configuration "release" :void)
