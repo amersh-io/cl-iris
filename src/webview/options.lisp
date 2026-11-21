@@ -152,3 +152,18 @@ show through wherever the page itself is transparent."
 
 (define-view-option :transparent (webview transparent)
   (set-draws-background webview (not transparent)))
+
+;;; Storage
+
+(define-configuration-option :incognito (configuration incognito)
+  (when incognito
+    (send configuration "setWebsiteDataStore:"
+          :pointer (send (find-class* "WKWebsiteDataStore") "nonPersistentDataStore")
+          :void)))
+
+(defun webview-incognito-p (webview)
+  "True if WEBVIEW keeps cookies, storage and caches in memory only, apart
+from every other webview, and forgets them when it goes."
+  (on-main
+   (lambda ()
+     (not (send (send (configuration webview) "websiteDataStore") "isPersistent" :bool)))))

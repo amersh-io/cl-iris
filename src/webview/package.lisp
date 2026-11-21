@@ -18,6 +18,7 @@
            #:webview-visible-p
            #:webview-transparent-p
            #:webview-autoplay-p
+           #:webview-incognito-p
            #:eval-js
            #:javascript-error
            #:request

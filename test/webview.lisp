@@ -324,6 +324,20 @@
                (not (webview-autoplay-p waiting)))
         (destroy-webview playing)
         (destroy-webview waiting))
+      (let ((private (make-webview window :incognito t :on-request #'serve
+                                          :url "iris://app/data.txt"))
+            (other-private (make-webview window :incognito t :on-request #'serve
+                                                :url "iris://app/data.txt")))
+        (check "an incognito webview keeps its data in memory"
+               (and (webview-incognito-p private)
+                    (not (webview-incognito-p webview))))
+        (check "incognito webviews do not share storage"
+               (and (wait-until (lambda () (equal "iris://app/data.txt" (eval-js private "location.href"))))
+                    (wait-until (lambda () (equal "iris://app/data.txt" (eval-js other-private "location.href"))))
+                    (progn (eval-js private "localStorage.setItem('k', 'private'); 0")
+                           (equal :null (eval-js other-private "localStorage.getItem('k')")))))
+        (destroy-webview private)
+        (destroy-webview other-private))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

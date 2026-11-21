@@ -36,7 +36,8 @@ and forward. With VISIBLE NIL, the webview starts hidden. With TRANSPARENT,
 it draws no background, so a transparent page shows what is behind it.
 
 With AUTOPLAY, media plays without waiting for a user gesture; with AUTOPLAY
-NIL, all media waits for one.
+NIL, all media waits for one. With INCOGNITO, cookies, storage and caches
+stay in memory, apart from other webviews.
 
 INIT-SCRIPTS run at the start of every document, before the page's own
 scripts: each is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T).
