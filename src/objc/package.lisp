@@ -6,7 +6,11 @@
 
 (defpackage #:cl-iris/objc
   (:use #:cl)
-  (:export #:make-block
+  (:export #:objc-object
+           #:objc-object-pointer
+           #:objc-pointer
+           #:objc-address
+           #:make-block
            #:release-block
            #:with-block
            #:block-function

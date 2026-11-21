@@ -18,6 +18,19 @@ none and ERRORP is true (otherwise return NIL)."
 
 ;;; Messaging
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun unwrap-pointer-arguments (args)
+    "Wrap the value of each :POINTER type/value pair in ARGS in OBJC-POINTER,
+leaving a trailing return type alone."
+    (loop for rest on args by #'cddr
+          for type = (first rest)
+          if (rest rest)
+            append (list type (if (eq type :pointer)
+                                  `(objc-pointer ,(second rest))
+                                  (second rest)))
+          else
+            collect type)))
+
 (defmacro send (receiver selector &rest args)
   "Send SELECTOR to RECEIVER through objc_msgSend.
 
@@ -26,11 +39,12 @@ by the return type, which defaults to :POINTER. RECEIVER may be an object or a
 class pointer; SELECTOR may be a string or a SEL.
 
 objc_msgSend is called with exactly the signature given here, never as a
-variadic function, which is what the arm64 calling convention requires."
+variadic function, which is what the arm64 calling convention requires.
+The receiver and every :POINTER argument may also be an OBJC-OBJECT."
   `(cffi:foreign-funcall "objc_msgSend"
-                         :pointer ,receiver
+                         :pointer (objc-pointer ,receiver)
                          :pointer (selector ,selector)
-                         ,@args
+                         ,@(unwrap-pointer-arguments args)
                          ,@(when (evenp (length args)) '(:pointer))))
 
 (defun responds-to-p (object selector)

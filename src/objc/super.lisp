@@ -9,12 +9,12 @@ the class CLASS-NAME has, for RECEIVER -- an instance of CLASS-NAME or of a
 subclass. Used inside a method CLASS-NAME overrides."
   (let ((super (gensym "SUPER")))
     `(cffi:with-foreign-object (,super :pointer 2)
-       (setf (cffi:mem-aref ,super :pointer 0) ,receiver
+       (setf (cffi:mem-aref ,super :pointer 0) (objc-pointer ,receiver)
              (cffi:mem-aref ,super :pointer 1)
              (cffi:foreign-funcall "class_getSuperclass"
                                    :pointer (find-class* ,class-name) :pointer))
        (cffi:foreign-funcall "objc_msgSendSuper"
                              :pointer ,super
                              :pointer (selector ,selector)
-                             ,@args
+                             ,@(unwrap-pointer-arguments args)
                              ,@(when (evenp (length args)) '(:pointer))))))

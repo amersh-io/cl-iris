@@ -123,6 +123,12 @@
                                 :pointer json :unsigned-long 0 :pointer (cffi:null-pointer)))
                   (value (objc->lisp object)))
              (equalp (vector 1 2.5d0 t nil :null "x") (gethash "a" value))))
+    (check "send takes an OBJC-OBJECT as receiver and as a pointer argument"
+           (let ((wrapped (make-instance 'objc-object :pointer (ns-string "iris"))))
+             (and (= 4 (send wrapped "length" :unsigned-long))
+                  (send (ns-string "iris") "isEqualToString:" :pointer wrapped :bool)
+                  (= (objc-address wrapped) (cffi:pointer-address (objc-pointer wrapped)))
+                  (search "OBJC-OBJECT" (princ-to-string wrapped)))))
     (check "send with an integer return type"
            (= 5 (send (ns-string "hello") "length" :unsigned-long)))
     (let ((object (make-test-object)))
