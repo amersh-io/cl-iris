@@ -29,7 +29,8 @@
                (:file "classes")
                (:file "blocks")
                (:file "super")
-               (:file "exceptions")))
+               (:file "exceptions")
+               (:file "inspect")))
 
 (defsystem "cl-iris/window"
   :description "The NSApplication loop on the main thread, NSWindow, and GCD."

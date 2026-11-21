@@ -10,6 +10,14 @@
            #:objc-object-pointer
            #:objc-pointer
            #:objc-address
+           #:objc-class
+           #:objc-class-p
+           #:objc-class-name
+           #:objc-superclasses
+           #:objc-class-methods
+           #:objc-class-protocols
+           #:objc-description
+           #:describe-objc
            #:make-block
            #:release-block
            #:with-block

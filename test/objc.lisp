@@ -129,6 +129,22 @@
                   (send (ns-string "iris") "isEqualToString:" :pointer wrapped :bool)
                   (= (objc-address wrapped) (cffi:pointer-address (objc-pointer wrapped)))
                   (search "OBJC-OBJECT" (princ-to-string wrapped)))))
+    (check "objc-class-name and objc-superclasses name a class and its ancestors"
+           (and (string= "NSMutableString" (objc-class-name "NSMutableString"))
+                (equal '("NSString" "NSObject") (objc-superclasses "NSMutableString"))
+                (objc-class-p (find-class* "NSObject"))
+                (not (objc-class-p (ns-string "x")))))
+    (check "objc-class-methods lists a class's own methods, or inherited ones too"
+           (let ((own (objc-class-methods "NSMutableString"))
+                 (all (objc-class-methods "NSMutableString" :inherited t)))
+             (and (member "appendString:" own :test #'string=)
+                  (not (member "description" own :test #'string=))
+                  (member "description" all :test #'string=))))
+    (check "objc-class-protocols lists the protocols a class adopts"
+           (member "NSObject" (objc-class-protocols "NSObject") :test #'string=))
+    (check "describe-objc prints the class chain and description"
+           (let ((text (with-output-to-string (s) (describe-objc (ns-string "described") s))))
+             (and (search "Class:" text) (search "NSObject" text) (search "described" text))))
     (check "send with an integer return type"
            (= 5 (send (ns-string "hello") "length" :unsigned-long)))
     (let ((object (make-test-object)))

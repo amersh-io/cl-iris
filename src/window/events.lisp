@@ -174,3 +174,20 @@ cannot answer within a second (no loop running, or it is busy)."
       (if (consp summary)
           (format stream "~S #~D" (first summary) (second summary))
           (format stream "~@[~(~A~) ~]#x~X" summary (objc-address window))))))
+
+(defmethod describe-object ((window window) stream)
+  (format stream "~&~S is a window made by MAKE-WINDOW.~%" window)
+  (handler-case
+      (on-main (lambda ()
+                 (let ((object (find-window window)))
+                   (cond ((null object)
+                          (format stream "  It has been released by CLOSE-WINDOW.~%"))
+                         (t
+                          (format stream "  Title: ~S~%  Frame: ~S~%  Size: ~S~%  Visible: ~A  Closed: ~A~%"
+                                  (window-title window) (window-frame window) (window-size window)
+                                  (window-visible-p window) (%window-closed object))
+                          (format stream "  Event handler: ~S~%  Close-request handler: ~S~%"
+                                  (%window-on-event object) (%window-on-close-request object))
+                          (describe-objc (window-pointer window) stream)))))
+               :timeout 2)
+    (error (e) (format stream "  (The main thread could not answer: ~A)~%" e))))

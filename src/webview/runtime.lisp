@@ -61,3 +61,20 @@ or NIL once DESTROY-WEBVIEW has released it."
       (if (stringp url)
           (format stream "~S" url)
           (format stream "~@[~(~A~) ~]#x~X" url (objc-address webview))))))
+
+(defmethod describe-object ((webview webview) stream)
+  (format stream "~&~S is a webview made by MAKE-WEBVIEW.~%" webview)
+  (handler-case
+      (on-main (lambda ()
+                 (let ((object (find-webview webview)))
+                   (cond ((null object)
+                          (format stream "  It has been destroyed by DESTROY-WEBVIEW.~%"))
+                         (t
+                          (format stream "  Window: ~S~%" (webview-window webview))
+                          (format stream "  Options:~%")
+                          (loop for (key value) on (webview-options webview) by #'cddr
+                                unless (eq key :delegate)
+                                  do (format stream "    ~S ~S~%" key value))
+                          (describe-objc (webview-pointer webview) stream)))))
+               :timeout 2)
+    (error (e) (format stream "  (The main thread could not answer: ~A)~%" e))))

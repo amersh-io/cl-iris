@@ -557,6 +557,10 @@ replaces it."
     (check "a window is a WINDOW object that prints its title and number"
            (and (typep window 'window)
                 (search "\"listed\" #" (prin1-to-string window))))
+    (check "describe shows a window's title, frame and Objective-C class"
+           (let ((text (with-output-to-string (s) (describe window s))))
+             (and (search "Title: \"listed\"" text) (search "Frame:" text)
+                  (search "NSWindow" text))))
     (check "window-pointer is the NSWindow, and find-window maps it back"
            (and (cffi:pointerp (window-pointer window))
                 (eq window (find-window (window-pointer window)))

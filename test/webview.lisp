@@ -144,6 +144,10 @@ proxy -- with what RESPOND returns for its request line; return the port."
                   (eq webview (find-webview (webview-pointer webview)))
                   (eq window (webview-window webview))
                   (member webview (webviews))))
+      (check "describe shows a webview's window, options and WebKit class"
+             (let ((text (with-output-to-string (s) (describe webview s))))
+               (and (search "Window:" text) (search ":ON-MESSAGE" text)
+                    (search "WKWebView" text))))
       (check "with-webview destroys its webview on the way out"
              (let ((kept nil))
                (with-webview (other window :html "<title>scoped</title>" :bounds '(0 0 10 10))
