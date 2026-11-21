@@ -6,7 +6,9 @@
 
 (defpackage #:cl-iris/objc
   (:use #:cl)
-  (:export #:make-handle
+  (:export #:objc->lisp
+           #:lisp->objc
+           #:make-handle
            #:handle-value
            #:retain-handle
            #:release-handle

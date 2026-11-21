@@ -43,6 +43,10 @@
              (equal "iris" (eval-js webview "document.title")))
       (check "eval-js returns numbers"
              (eql 42 (eval-js webview "1 + 41")))
+      (check "eval-js returns objects as hash tables"
+             (let ((value (eval-js webview "({a: [1, true, null], b: 'x'})")))
+               (and (equalp (vector 1 t :null) (gethash "a" value))
+                    (equal "x" (gethash "b" value)))))
       (check "eval-js signals JavaScript errors"
              (handler-case (progn (eval-js webview "throw new Error('nope')") nil)
                (javascript-error () t)))

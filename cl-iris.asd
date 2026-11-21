@@ -21,6 +21,7 @@
                (:file "messaging")
                (:file "geometry")
                (:file "strings")
+               (:file "convert")
                (:file "pool")
                (:file "classes")))
 
@@ -45,7 +46,6 @@
   :serial t
   :components ((:file "package")
                (:file "runtime")
-               (:file "convert")
                (:file "delegate")
                (:file "webview")
                (:file "eval")))

@@ -17,3 +17,6 @@
 
 (defun route (webview key)
   (getf (gethash (cffi:pointer-address webview) *routes*) key))
+
+(defun report (where condition)
+  (format *error-output* "~&;; cl-iris: error in ~A: ~A~%" where condition))

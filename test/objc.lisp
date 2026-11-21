@@ -60,6 +60,22 @@
              (prog1 (= (1+ start) (retain-count object))
                (release object)
                (release object))))
+    (check "Lisp values survive a round trip through Foundation"
+           (every (lambda (value) (equalp value (objc->lisp (lisp->objc value))))
+                  (list "héllo" 42 -7 2.5d0 t nil :null
+                        (vector 1 "two" (vector 3.5d0 :null)))))
+    (check "hash tables become dictionaries and back"
+           (let ((table (make-hash-table :test 'equal)))
+             (setf (gethash "a" table) (vector 1 t))
+             (equalp table (objc->lisp (lisp->objc table)))))
+    (check "JSON parsed by Foundation converts as JSON"
+           (let* ((json (send (ns-string "{\"a\": [1, 2.5, true, false, null, \"x\"]}")
+                              "dataUsingEncoding:" :unsigned-long 4))
+                  (object (send (find-class* "NSJSONSerialization")
+                                "JSONObjectWithData:options:error:"
+                                :pointer json :unsigned-long 0 :pointer (cffi:null-pointer)))
+                  (value (objc->lisp object)))
+             (equalp (vector 1 2.5d0 t nil :null "x") (gethash "a" value))))
     (check "send with an integer return type"
            (= 5 (send (ns-string "hello") "length" :unsigned-long)))
     (let ((object (make-test-object)))
