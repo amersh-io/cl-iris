@@ -319,6 +319,9 @@ replaces it."
     (check "the default application menu quits through the quit request"
            (item-is (list (application-name) (format nil "Quit ~A" (application-name)))
                     "q" "terminate:"))
+    (check "windows are not merged into tabs unless asked for"
+           (not (on-main (lambda ()
+                           (send (find-class* "NSWindow") "allowsAutomaticWindowTabbing" :bool)))))
     (check "the Window menu is the application's windows menu"
            (on-main (lambda ()
                       (string= "Window" (lisp-string (send (send (cl-iris/window::app) "windowsMenu")

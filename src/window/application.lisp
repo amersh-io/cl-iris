@@ -16,7 +16,8 @@
 
 (defun run-application (&key on-launch (activation-policy :regular)
                           (on-quit-request (constantly t)) on-reopen
-                          quit-on-last-window-closed (menu-bar :default))
+                          quit-on-last-window-closed (menu-bar :default)
+                          window-tabbing)
   "Run the Cocoa application on the main thread until STOP-APPLICATION.
 ON-LAUNCH, if given, is called on the main thread once the loop is running.
 ACTIVATION-POLICY is :REGULAR, :ACCESSORY (no Dock icon) or :PROHIBITED.
@@ -29,7 +30,8 @@ QUIT-ON-LAST-WINDOW-CLOSED, closing the last window counts as a request to
 quit.
 
 MENU-BAR is :DEFAULT for DEFAULT-MENU-BAR, a description for SET-MENU-BAR,
-or NIL to install none.
+or NIL to install none. Unless WINDOW-TABBING is true, AppKit does not merge
+windows into tabs or add its tab items to the View menu.
 
 Must be called on the main thread."
   (unless (main-thread-p)
@@ -53,6 +55,8 @@ Must be called on the main thread."
                (send app "setActivationPolicy:"
                      :long (activation-policy-value activation-policy) :bool)
                (send app "setDelegate:" :pointer delegate :void)
+               (send (find-class* "NSWindow") "setAllowsAutomaticWindowTabbing:"
+                     :bool (and window-tabbing t) :void)
                (when menu-bar
                  (install-menu-bar (if (eq menu-bar :default) (default-menu-bar) menu-bar)))
                (when on-launch
