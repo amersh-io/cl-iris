@@ -30,7 +30,8 @@ and a RESPONDER instead, returns at once, and answers later with RESPOND,
 from any thread. ON-REQUEST is shorthand for one synchronous protocol named
 SCHEME.
 
-USER-AGENT replaces the user agent string WebKit sends.
+USER-AGENT replaces the user agent string WebKit sends. With DEVTOOLS, Web
+Inspector can inspect the webview.
 
 INIT-SCRIPTS run at the start of every document, before the page's own
 scripts: each is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T).

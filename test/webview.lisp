@@ -286,6 +286,15 @@
                  (setf (webview-user-agent other) nil)
                  (search "AppleWebKit" (webview-user-agent other))))
         (destroy-webview other))
+      (let ((other (make-webview window :devtools t)))
+        (check "devtools makes a webview inspectable"
+               (webview-devtools-p other))
+        (check "devtools can be switched off on a live webview"
+               (progn (setf (webview-devtools-p other) nil)
+                      (not (webview-devtools-p other))))
+        (destroy-webview other))
+      (check "webviews are not inspectable by default"
+             (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"
              (handler-case (progn (make-webview window :protocols (list (list "https" #'serve))) nil)
                (error (e) (search "itself" (princ-to-string e)))))

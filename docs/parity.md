@@ -32,7 +32,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_download_started_handler`, `with_download_completed_handler` | `:on-download` | planned | |
 | `with_permission_handler` | `:on-permission` (camera, microphone) | planned | |
 | `with_user_agent` | `:user-agent`, `(setf webview-user-agent)` | done | "a custom user agent reaches navigator and requests", "the user agent can change on a live webview" |
-| `with_devtools` | `:devtools` (Web Inspector via `isInspectable`) | planned | |
+| `with_devtools` | `:devtools`, `(setf webview-devtools-p)` (Web Inspector via `isInspectable`) | done | "devtools makes a webview inspectable" |
 | `with_transparent` | `:transparent` | planned | |
 | `with_background_color` | `:background-color` | planned | |
 | `with_visible` | `:visible` | planned | |

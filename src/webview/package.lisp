@@ -13,6 +13,7 @@
            #:load-html
            #:add-init-script
            #:webview-user-agent
+           #:webview-devtools-p
            #:eval-js
            #:javascript-error
            #:request
