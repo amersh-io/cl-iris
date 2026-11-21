@@ -50,6 +50,10 @@
       (check "eval-js signals JavaScript errors"
              (handler-case (progn (eval-js webview "throw new Error('nope')") nil)
                (javascript-error () t)))
+      (check "eval-js leaves no handles behind"
+             (let ((before (handle-count)))
+               (dotimes (i 5) (eval-js webview "1"))
+               (wait-until (lambda () (= before (handle-count))))))
       (check "eval-js refuses to wait on the main thread"
              (handler-case (progn (on-main (lambda () (eval-js webview "1"))) nil)
                (error (e) (search "main thread" (princ-to-string e)))))

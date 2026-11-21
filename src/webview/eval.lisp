@@ -2,47 +2,23 @@
 
 (in-package #:cl-iris/webview)
 
-;;; Evaluating JavaScript
-;;;
-;;; -evaluateJavaScript:completionHandler: takes a block. We build one by hand
-;;; in foreign memory, marked global so the runtime neither copies nor frees
-;;; it. Its last word holds the integer id of the Lisp function to call.
-;;;
-;;;   0 isa   8 flags, reserved   16 invoke   24 descriptor   32 id
-;;;   40 descriptor: reserved, size
-
-(defconstant +block-is-global+ (ash 1 28))
-(defconstant +block-size+ 40)
+;;; -evaluateJavaScript:completionHandler: takes a block, made with MAKE-BLOCK:
+;;; WebKit keeps its own reference until it has called it, and the Lisp
+;;; callback's handle goes away with the last reference.
 
 (define-condition javascript-error (error)
   ((message :initarg :message :reader javascript-error-message))
   (:report (lambda (c stream)
              (format stream "JavaScript error: ~A" (javascript-error-message c)))))
 
-(cffi:defcallback js-completion :void
-    ((block :pointer) (result :pointer) (error :pointer))
-  (let ((function (take-handle (cffi:mem-ref block :int64 32))))
-    ;; WebKit releases the block after calling it, so free it only later.
-    (on-main (lambda () (cffi:foreign-free block)) :wait nil)
-    (when function
-      (handler-case
-          (funcall function
-                   (objc->lisp result)
-                   (unless (cffi:null-pointer-p error)
-                     (lisp-string (send error "localizedDescription"))))
-        (serious-condition (c) (report-error "eval-js callback" c))))))
+(define-block-invoker js-completion :void ((result :pointer) (error :pointer)))
 
-(defun make-completion-block (function)
-  (let ((block (cffi:foreign-alloc :uint8 :count (+ +block-size+ 16))))
-    (setf (cffi:mem-ref block :pointer 0) (cffi:foreign-symbol-pointer "_NSConcreteGlobalBlock")
-          (cffi:mem-ref block :int32 8) +block-is-global+
-          (cffi:mem-ref block :int32 12) 0
-          (cffi:mem-ref block :pointer 16) (cffi:callback js-completion)
-          (cffi:mem-ref block :pointer 24) (cffi:inc-pointer block +block-size+)
-          (cffi:mem-ref block :int64 32) (make-handle function)
-          (cffi:mem-ref block :uint64 40) 0
-          (cffi:mem-ref block :uint64 48) +block-size+)
-    block))
+(defun completion-function (callback)
+  (lambda (result error)
+    (funcall callback
+             (objc->lisp result)
+             (unless (cffi:null-pointer-p error)
+               (lisp-string (send error "localizedDescription"))))))
 
 (defun eval-js (webview script &key (wait t) callback)
   "Evaluate SCRIPT in WEBVIEW.
@@ -75,9 +51,11 @@ main thread with the value and an error message (or NIL)."
                                (when message (report-error "eval-js" message))))))
            (on-main
             (lambda ()
-              (send webview "evaluateJavaScript:completionHandler:"
-                    :pointer (ns-string script)
-                    :pointer (make-completion-block callback)
-                    :void))
+              (with-block (block (cffi:callback js-completion)
+                                 (completion-function callback))
+                (send webview "evaluateJavaScript:completionHandler:"
+                      :pointer (ns-string script)
+                      :pointer block
+                      :void)))
             :wait nil))
          nil)))
