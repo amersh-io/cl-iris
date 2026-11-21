@@ -244,6 +244,11 @@ AppKit animates."
     (check "make-window :style NIL opens a borderless window"
            (null (window-style window)))
     (close-window window))
+  (check "make-window refuses bad arguments before touching AppKit"
+         (every (lambda (arguments)
+                  (handler-case (progn (apply #'make-window :activate nil arguments) nil)
+                    (error () t)))
+                '((:width -5) (:height 0) (:title 42) (:min-size (100)) (:max-size "big"))))
   (check "an unknown style keyword is refused"
          (handler-case (progn (make-window :style '(:wobbly) :activate nil) nil)
            (error (e) (search "WOBBLY" (princ-to-string e))))))

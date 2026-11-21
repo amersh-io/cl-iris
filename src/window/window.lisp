@@ -26,6 +26,15 @@ WINDOW-CLOSE-REQUEST-HANDLER set.
 A VISIBLE window is shown at once; otherwise it waits for SHOW-WINDOW. With
 ACTIVATE, the application is brought to the front; without it, the window
 opens without taking focus from other applications."
+  (check-type title string)
+  (check-type x real)
+  (check-type y real)
+  (check-type width (real (0)))
+  (check-type height (real (0)))
+  (check-type style list)
+  (dolist (size (list min-size max-size))
+    (unless (or (null size) (and (listp size) (= 2 (length size)) (every #'realp size)))
+      (error "A size is a list (width height), not ~S." size)))
   (let* ((style (remove-if (lambda (keyword)
                             (or (and (eq keyword :resizable) (not resizable))
                                 (and (eq keyword :titled) (not decorations))))
