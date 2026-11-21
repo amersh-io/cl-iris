@@ -53,4 +53,6 @@
            #:window-alpha
            #:window-background-color
            #:window-transparent-p
-           #:window-appearance))
+           #:window-appearance
+           #:window-title-visible-p
+           #:window-titlebar-transparent-p))

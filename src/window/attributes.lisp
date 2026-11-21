@@ -307,3 +307,22 @@ follows the system reports what the system currently uses."
              :void))))
   appearance)
 
+;;; The title bar
+
+(defun window-title-visible-p (window)
+  (on-main (lambda () (zerop (send window "titleVisibility" :long)))))
+
+(defun (setf window-title-visible-p) (visible window)
+  "Show or hide the title text; the title bar and its buttons stay."
+  (on-main (lambda () (send window "setTitleVisibility:" :long (if visible 0 1) :void)))
+  visible)
+
+(defun window-titlebar-transparent-p (window)
+  (on-main (lambda () (send window "titlebarAppearsTransparent" :bool))))
+
+(defun (setf window-titlebar-transparent-p) (transparent window)
+  "Draw the title bar without its own background. Together with the
+:FULL-SIZE-CONTENT-VIEW style, the content then fills the whole window under
+the title bar's buttons."
+  (on-main (lambda () (send window "setTitlebarAppearsTransparent:" :bool transparent :void)))
+  transparent)

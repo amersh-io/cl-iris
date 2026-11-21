@@ -157,6 +157,16 @@ AppKit animates."
     (check "a window can follow the system's appearance again"
            (progn (setf (window-appearance window) :system)
                   (member (window-appearance window) '(:light :dark))))
+    (check "the title text can be hidden"
+           (progn (setf (window-title-visible-p window) nil)
+                  (not (window-title-visible-p window))))
+    (check "the title bar can be made transparent over full-size content"
+           (progn (setf (window-style window) (adjoin :full-size-content-view (window-style window))
+                        (window-titlebar-transparent-p window) t)
+                  (and (window-titlebar-transparent-p window)
+                       ;; The content now fills the frame, under the title bar.
+                       (= (nth-value 3 (window-frame window))
+                          (nth-value 1 (window-content-size window))))))
     (close-window window))
   (let ((window (make-window :title "minimize and zoom" :width 300 :height 200 :activate nil)))
     (check "a window can be minimized and restored"
