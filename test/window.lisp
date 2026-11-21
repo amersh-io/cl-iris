@@ -83,6 +83,12 @@
                     (declare (ignore x y width))
                     (and (not (window-decorated-p window))
                          (= height (nth-value 1 (window-content-size window)))))))
+    (check "a window starts at the normal level"
+           (eq :normal (window-level window)))
+    (check "a window can be kept on top"
+           (progn (setf (window-level window) :floating)
+                  (prog1 (eq :floating (window-level window))
+                    (setf (window-level window) :normal))))
     (close-window window))
   (let ((window (make-window :title "borderless" :style '() :activate nil)))
     (check "make-window :style NIL opens a borderless window"

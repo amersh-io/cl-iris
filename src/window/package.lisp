@@ -34,4 +34,5 @@
            #:set-window-max-size
            #:window-style
            #:window-resizable-p
-           #:window-decorated-p))
+           #:window-decorated-p
+           #:window-level))

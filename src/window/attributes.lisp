@@ -124,3 +124,28 @@ area to."
 (defun (setf window-decorated-p) (decorated window)
   (update-style window :titled decorated)
   decorated)
+
+;;; Level: which windows a window stays above.
+
+(defparameter *levels*
+  '((:normal . 0)
+    (:floating . 3)                     ; above normal windows: "always on top"
+    (:status . 25)
+    (:pop-up-menu . 101)
+    (:screen-saver . 1000))
+  "NSWindowLevel values by keyword.")
+
+(defun window-level (window)
+  "Return WINDOW's level: :NORMAL, :FLOATING (always on top), :STATUS,
+:POP-UP-MENU, :SCREEN-SAVER, or an integer for any other level."
+  (let ((level (on-main (lambda () (send window "level" :long)))))
+    (or (car (rassoc level *levels*)) level)))
+
+(defun (setf window-level) (level window)
+  (let ((value (if (integerp level)
+                   level
+                   (or (cdr (assoc level *levels*))
+                       (error "Unknown window level ~S; expected an integer or one of ~S."
+                              level (mapcar #'car *levels*))))))
+    (on-main (lambda () (send window "setLevel:" :long value :void))))
+  level)
