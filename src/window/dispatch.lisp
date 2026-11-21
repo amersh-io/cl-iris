@@ -33,15 +33,14 @@ condition it signals is signalled again in the calling thread. Called on the
 main thread with WAIT, FUNCTION simply runs in place.
 
 Without WAIT, queue FUNCTION and return NIL at once. An error it signals is
-reported on *ERROR-OUTPUT*, since there is nobody left to return it to.
+handed to REPORT-ERROR, since there is nobody left to return it to.
 
 Queued work runs only while the main thread is in RUN-APPLICATION."
   (cond ((not wait)
          (dispatch-to-main
           (lambda ()
             (handler-case (funcall function)
-              (serious-condition (c)
-                (format *error-output* "~&;; cl-iris: error on the main thread: ~A~%" c)))))
+              (serious-condition (c) (report-error "work queued on the main thread" c)))))
          nil)
         ((main-thread-p)
          (with-cocoa-float-traps

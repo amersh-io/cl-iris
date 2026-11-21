@@ -30,7 +30,7 @@
                    (objc->lisp result)
                    (unless (cffi:null-pointer-p error)
                      (lisp-string (send error "localizedDescription"))))
-        (serious-condition (c) (report "eval-js callback" c))))))
+        (serious-condition (c) (report-error "eval-js callback" c))))))
 
 (defun make-completion-block (function)
   (let ((block (cffi:foreign-alloc :uint8 :count (+ +block-size+ 16))))
@@ -72,7 +72,7 @@ main thread with the value and an error message (or NIL)."
          (let ((callback (or callback
                              (lambda (value message)
                                (declare (ignore value))
-                               (when message (report "eval-js" message))))))
+                               (when message (report-error "eval-js" message))))))
            (on-main
             (lambda ()
               (send webview "evaluateJavaScript:completionHandler:"

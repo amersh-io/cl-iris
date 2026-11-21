@@ -33,6 +33,8 @@
            #:no-such-class
            #:no-such-protocol
            #:class-definition-error
+           #:*error-reporter*
+           #:report-error
            #:find-class*
            #:selector
            #:send

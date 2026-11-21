@@ -11,7 +11,7 @@
   (let ((handler (route (send message "webView") :on-message)))
     (when handler
       (handler-case (funcall handler (objc->lisp (send message "body")))
-        (serious-condition (c) (report "on-message" c))))))
+        (serious-condition (c) (report-error "on-message" c))))))
 
 (defun ns-data (octets)
   (let ((octets (coerce octets '(simple-array (unsigned-byte 8) (*)))))
@@ -46,7 +46,7 @@
     (multiple-value-bind (body content-type)
         (handler-case (and handler (funcall handler url))
           (serious-condition (c)
-            (report (format nil "on-request for ~A" url) c)
+            (report-error (format nil "on-request for ~A" url) c)
             (values :error)))
       (cond ((eq body :error)
              (respond task 500 "text/plain" (to-octets "Internal error")))

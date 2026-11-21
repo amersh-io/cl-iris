@@ -17,3 +17,21 @@
 (define-condition class-definition-error (objc-error) ()
   (:report (lambda (c s)
              (format s "Could not create the Objective-C class ~S." (objc-error-name c)))))
+
+;;; Errors in callbacks
+;;;
+;;; A Lisp error must never unwind into Objective-C frames, so every callback
+;;; the runtime calls catches its errors and hands them to REPORT-ERROR.
+
+(defvar *error-reporter*
+  (lambda (where condition)
+    (format *error-output* "~&;; cl-iris: error in ~A: ~A~%" where condition)
+    (finish-output *error-output*))
+  "A function of two arguments, a description of where the error happened and
+the condition, called for errors caught in callbacks from Objective-C.")
+
+(defun report-error (where condition)
+  "Hand CONDITION, caught in a callback, to *ERROR-REPORTER*. An error inside
+the reporter itself is dropped rather than allowed to unwind into C."
+  (ignore-errors (funcall *error-reporter* where condition))
+  nil)

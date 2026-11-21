@@ -20,6 +20,17 @@
            (on-main (lambda () 2) :wait nil)
            (on-main (lambda () 3))
            (= before (handle-count))))
+  (check "errors in queued work reach the error reporter"
+         ;; Set globally: the error is reported on the main thread, which does
+         ;; not see this thread's bindings.
+         (let ((seen nil)
+               (old *error-reporter*))
+           (setf *error-reporter* (lambda (where c) (declare (ignore where)) (setf seen c)))
+           (unwind-protect
+                (progn (on-main (lambda () (error "queued boom")) :wait nil)
+                       (on-main (lambda () nil))
+                       (and seen (search "queued boom" (princ-to-string seen))))
+             (setf *error-reporter* old))))
   (check "queued work runs in order"
          (let ((log '()))
            (on-main (lambda () (push :first log)) :wait nil)
