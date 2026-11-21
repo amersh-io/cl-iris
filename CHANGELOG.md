@@ -19,6 +19,7 @@ change the API.
 ### Added
 
 - `webview-destroyed`, `webview-destroyed-p`.
+- `*webview*`, bound to the calling webview while any of its handlers runs.
 
 ## 0.1.0 — 2026-11-21
 

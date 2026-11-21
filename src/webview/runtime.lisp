@@ -33,6 +33,13 @@ WKWebView, which SEND also accepts the webview itself in place of."))
   "The WKWebView behind WEBVIEW, for calling WebKit directly with SEND."
   (objc-object-pointer webview))
 
+(defvar *webview* nil
+  "While a handler of a webview runs -- ON-MESSAGE, ON-INVOKE, a protocol
+handler, ON-NAVIGATE and the other ON- handlers -- the WEBVIEW it was called
+for; NIL otherwise. One handler shared by several webviews uses it to answer
+the right page. It is bound on the main thread for the handler's own call;
+code the handler hands to another thread must capture it first.")
+
 (defvar *routes* (make-hash-table)
   "WEBVIEW objects by the address of their WKWebView. Main thread only.")
 

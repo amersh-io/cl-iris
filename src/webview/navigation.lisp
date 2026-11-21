@@ -10,7 +10,8 @@
 (defun call-handler (webview key description &rest arguments)
   "Call WEBVIEW's KEY handler with ARGUMENTS, if it has one. Returns its value
 and true, or NIL and NIL when there is no handler or it signalled (reported)."
-  (let ((handler (route webview key)))
+  (let ((handler (route webview key))
+        (*webview* (find-webview webview)))
     (when handler
       (handler-case (values (apply handler arguments) t)
         (serious-condition (c)

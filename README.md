@@ -182,7 +182,9 @@ Dock), on a Dock click, and whether closing the last window quits.
 
 A handler given as a symbol, `:on-message 'my-handler`, follows
 redefinitions of `my-handler`. Handlers run on the main thread; an error in
-one goes to `report-error` rather than into WebKit.
+one goes to `report-error` rather than into WebKit. While a handler runs,
+`*webview*` is the webview it was called for, so one handler can serve
+several webviews.
 
 `destroy-webview` releases a webview; using it afterwards signals
 `webview-destroyed` (and a closed window, `window-closed`) instead of

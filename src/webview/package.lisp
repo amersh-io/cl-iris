@@ -11,6 +11,7 @@
            #:webview-pointer
            #:webview-window
            #:find-webview
+           #:*webview*
            #:webview-destroyed
            #:webview-destroyed-p
            #:webviews

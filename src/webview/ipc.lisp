@@ -25,10 +25,12 @@
   "Defines window.iris in every frame of every page.")
 
 (defun receive-message (message)
-  (let ((handler (route (send message "webView") :on-message)))
+  (let* ((webview (send message "webView"))
+         (handler (route webview :on-message)))
     (when handler
-      (handler-case (funcall handler (objc->lisp (send message "body")))
-        (serious-condition (c) (report-error "on-message" c))))))
+      (let ((*webview* (find-webview webview)))
+        (handler-case (funcall handler (objc->lisp (send message "body")))
+          (serious-condition (c) (report-error "on-message" c)))))))
 
 ;;; Answering an invocation
 ;;;
@@ -60,7 +62,8 @@ reply block REPLY once, from any thread; later calls signal an error."
 (defun receive-invocation (message reply)
   (let* ((webview (send message "webView"))
          (handler (route webview :on-invoke))
-         (answer (reply-function reply)))
+         (answer (reply-function reply))
+         (*webview* (find-webview webview)))
     (handler-case
         (cond ((null handler)
                (funcall answer nil :error "This webview has no :on-invoke handler."))
