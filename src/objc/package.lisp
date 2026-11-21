@@ -6,7 +6,13 @@
 
 (defpackage #:cl-iris/objc
   (:use #:cl)
-  (:export #:objc->lisp
+  (:export #:make-block
+           #:release-block
+           #:with-block
+           #:block-function
+           #:define-block-invoker
+           #:call-block
+           #:objc->lisp
            #:lisp->objc
            #:make-handle
            #:handle-value

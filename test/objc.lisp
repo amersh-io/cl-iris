@@ -2,6 +2,53 @@
 
 (in-package #:cl-iris/test)
 
+;;; Block invokers used by the tests.
+
+(define-block-invoker add-block :long-long ((a :long-long) (b :long-long)))
+(define-block-invoker each-object-block :void ((object :pointer) (index :unsigned-long) (stop :pointer)))
+(define-block-invoker plain-block :void ())
+
+(defun wait-for (predicate &key (timeout 5))
+  (loop repeat (* timeout 100)
+        thereis (funcall predicate)
+        do (sleep 0.01)))
+
+(defun block-tests ()
+  (let ((before (handle-count)))
+    (check "a block calls its Lisp function"
+           (with-block (b (cffi:callback add-block) #'+)
+             (= 42 (call-block b :long-long 40 :long-long 2 :long-long))))
+    (check "a released block frees its handle"
+           (= before (handle-count)))
+    (check "Foundation calls a block synchronously"
+           (let ((seen '()))
+             (with-block (b (cffi:callback each-object-block)
+                            (lambda (object index stop)
+                              (declare (ignore stop))
+                              (push (cons index (lisp-string object)) seen)))
+               (send (lisp->objc (vector "a" "b" "c")) "enumerateObjectsUsingBlock:"
+                     :pointer b :void))
+             (equal '((0 . "a") (1 . "b") (2 . "c")) (reverse seen))))
+    (check "GCD keeps a block alive and releases it after running it"
+           (let ((ran nil))
+             (with-block (b (cffi:callback plain-block) (lambda () (setf ran t)))
+               (cffi:foreign-funcall "dispatch_async"
+                                     :pointer (cffi:foreign-funcall "dispatch_get_global_queue"
+                                                                    :long 0 :unsigned-long 0 :pointer)
+                                     :pointer b :void))
+             (and (wait-for (lambda () ran))
+                  (wait-for (lambda () (= before (handle-count)))))))
+    (check "an error in a block is reported, not raised into C"
+           (let ((seen nil)
+                 (old *error-reporter*))
+             (setf *error-reporter* (lambda (where c) (declare (ignore where)) (setf seen c)))
+             (unwind-protect
+                  (with-block (b (cffi:callback add-block)
+                                 (lambda (a b) (declare (ignore a b)) (error "block boom")))
+                    (and (= 0 (call-block b :long-long 1 :long-long 2 :long-long))
+                         seen))
+               (setf *error-reporter* old))))))
+
 ;;; Methods implemented in Lisp, called from the Objective-C runtime.
 
 (cffi:defcallback add-to :long-long

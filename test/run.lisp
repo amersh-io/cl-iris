@@ -4,6 +4,7 @@
   "Run every test; signal an error if any of them fails."
   (setf *failures* '())
   (objc-tests)
+  (block-tests)
   (application-tests (list #'window-checks #'webview-checks))
   (when *failures*
     (error "~D cl-iris test~:P failed: ~{~A~^, ~}"
