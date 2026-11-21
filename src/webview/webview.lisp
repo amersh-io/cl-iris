@@ -122,6 +122,9 @@ ON-FILE-DIALOG chooses files for <input type=file>: it is called with the
 keywords :MULTIPLE and :DIRECTORIES saying what the input accepts and
 returns a list of paths, or NIL to cancel. Without it, an open panel is
 shown as a sheet on the window.
+ON-PERMISSION decides a page's request for :CAMERA, :MICROPHONE or
+:CAMERA-AND-MICROPHONE, called with that and the page's origin; it returns
+:GRANT, :DENY or :PROMPT (ask the user, as WebKit does without it).
 ON-PAGE-LOAD is called with :STARTED or :FINISHED and the URL as a page
 loads, or with :FAILED, the URL and an error message.
 ON-TITLE-CHANGE is called with the document's title whenever it changes.

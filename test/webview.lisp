@@ -673,6 +673,30 @@ small page; return the port."
                                                        :pointer sheet :long 0 :void)))
                              (wait-until (lambda () (eq t (eval-js other "window.cancelled || false"))))))))
         (destroy-webview other))
+      ;; Asking for the real camera would bring up the system's privacy prompt,
+      ;; so the delegate is called directly, as WebKit would call it.
+      (let* ((asked nil)
+             (other (make-webview window :on-permission (lambda (kind origin)
+                                                         (setf asked (list kind origin))
+                                                         :deny))))
+        (flet ((decide (view type)
+                 (let ((decision nil))
+                   (with-block (block (cffi:callback cl-iris/webview::sheet-ended)
+                                      (lambda (value) (setf decision value)))
+                     (on-main (lambda ()
+                                (send (cl-iris/webview::route view :delegate)
+                                      "webView:requestMediaCapturePermissionForOrigin:initiatedByFrame:type:decisionHandler:"
+                                      :pointer view :pointer (cffi:null-pointer)
+                                      :pointer (cffi:null-pointer) :long type :pointer block
+                                      :void))))
+                   decision)))
+          (check "on-permission decides a request for the microphone"
+                 (and (eql 2 (decide other 1)) (equal '(:microphone nil) asked)))
+          (check "without on-permission, WebKit prompts as usual"
+                 (let ((plain (make-webview window)))
+                   (prog1 (eql 0 (decide plain 0))
+                     (destroy-webview plain)))))
+        (destroy-webview other))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

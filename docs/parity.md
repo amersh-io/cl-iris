@@ -30,7 +30,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_document_title_changed_handler` | `:on-title-change` | done | "on-title-change hears a script change the title" |
 | `with_drag_drop_handler` | `:on-drag-drop` | planned | |
 | `with_download_started_handler`, `with_download_completed_handler` | `:on-download` | planned | |
-| `with_permission_handler` | `:on-permission` (camera, microphone) | planned | |
+| `with_permission_handler` | `:on-permission` (camera, microphone) | done | "on-permission decides a request for the microphone" |
 | `with_user_agent` | `:user-agent`, `(setf webview-user-agent)` | done | "a custom user agent reaches navigator and requests", "the user agent can change on a live webview" |
 | `with_devtools` | `:devtools`, `(setf webview-devtools-p)` (Web Inspector via `isInspectable`) | done | "devtools makes a webview inspectable" |
 | `with_transparent` | `:transparent`, `(setf webview-transparent-p)` | done | "a transparent webview draws no background" |

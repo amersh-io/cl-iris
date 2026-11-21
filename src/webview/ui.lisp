@@ -164,3 +164,26 @@ block with a Lisp answer."
             (serious-condition (c)
               (report-error "a file panel" c)
               (finish nil)))))))
+
+;;; Camera and microphone (macOS 12 and later)
+
+(defparameter *capture-kinds* '((0 . :camera) (1 . :microphone) (2 . :camera-and-microphone)))
+(defparameter *permission-decisions* '((:prompt . 0) (:grant . 1) (:deny . 2)))
+
+(defun origin-string (origin)
+  "The WKSecurityOrigin ORIGIN as \"scheme://host[:port]\", or NIL."
+  (unless (cffi:null-pointer-p origin)
+    (let ((port (send origin "port" :long)))
+      (format nil "~A://~A~@[:~D~]"
+              (lisp-string (send origin "protocol"))
+              (lisp-string (send origin "host"))
+              (and (plusp port) port)))))
+
+(defun media-capture-permission (webview origin type decide)
+  "Answer a page's request for the camera or microphone through the decision
+block DECIDE, once: from :ON-PERMISSION, else let WebKit prompt as usual."
+  (multiple-value-bind (choice handled)
+      (call-handler webview :on-permission "on-permission"
+                    (cdr (assoc type *capture-kinds*)) (origin-string origin))
+    (call-block decide :long (or (and handled (cdr (assoc choice *permission-decisions*)))
+                                 (cdr (assoc :prompt *permission-decisions*))))))

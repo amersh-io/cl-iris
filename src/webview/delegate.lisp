@@ -66,6 +66,11 @@
       (self (webview :pointer) (parameters :pointer) (frame :pointer) (completion :pointer))
     (declare (ignore frame))
     (open-panel webview parameters completion))
+  (:method "webView:requestMediaCapturePermissionForOrigin:initiatedByFrame:type:decisionHandler:"
+      :void
+      (self (webview :pointer) (origin :pointer) (frame :pointer) (type :long) (decide :pointer))
+    (declare (ignore frame))
+    (media-capture-permission webview origin type decide))
   (:method "webViewWebContentProcessDidTerminate:" :void (self (webview :pointer))
     (web-process-terminated webview))
   (:method "webView:didFailNavigation:withError:" :void
