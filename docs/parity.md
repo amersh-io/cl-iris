@@ -31,7 +31,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_drag_drop_handler` | `:on-drag-drop` | planned | |
 | `with_download_started_handler`, `with_download_completed_handler` | `:on-download` | planned | |
 | `with_permission_handler` | `:on-permission` (camera, microphone) | planned | |
-| `with_user_agent` | `:user-agent` | planned | |
+| `with_user_agent` | `:user-agent`, `(setf webview-user-agent)` | done | "a custom user agent reaches navigator and requests", "the user agent can change on a live webview" |
 | `with_devtools` | `:devtools` (Web Inspector via `isInspectable`) | planned | |
 | `with_transparent` | `:transparent` | planned | |
 | `with_background_color` | `:background-color` | planned | |

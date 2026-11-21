@@ -269,6 +269,23 @@
              (progn
                (eval-js webview "iris.invoke(1).catch(e => window.noHandler = String(e.message || e)); 0")
                (wait-until (lambda () (search "no :on-invoke" (eval-js webview "window.noHandler || ''"))))))
+      (let ((other (make-webview window :on-request #'serve :user-agent "cl-iris-test/1"
+                                        :url "iris://app/data.txt")))
+        (check "a custom user agent reaches navigator and requests"
+               (and (wait-until (lambda () (equal "cl-iris-test/1" (eval-js other "navigator.userAgent"))))
+                    (wait-until (lambda () (equal "cl-iris-test/1"
+                                                  (request-header *last-request* "User-Agent"))))
+                    (equal "cl-iris-test/1" (webview-user-agent other))))
+        (check "the user agent can change on a live webview"
+               (progn
+                 (setf (webview-user-agent other) "cl-iris-test/2")
+                 (load-url other "iris://app/data.txt")
+                 (wait-until (lambda () (equal "cl-iris-test/2" (eval-js other "navigator.userAgent"))))))
+        (check "clearing the user agent restores WebKit's"
+               (progn
+                 (setf (webview-user-agent other) nil)
+                 (search "AppleWebKit" (webview-user-agent other))))
+        (destroy-webview other))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"
              (handler-case (progn (make-webview window :protocols (list (list "https" #'serve))) nil)
                (error (e) (search "itself" (princ-to-string e)))))

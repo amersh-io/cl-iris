@@ -12,6 +12,7 @@
            #:load-url
            #:load-html
            #:add-init-script
+           #:webview-user-agent
            #:eval-js
            #:javascript-error
            #:request

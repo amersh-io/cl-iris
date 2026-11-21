@@ -58,6 +58,7 @@
                (:file "scheme")
                (:file "ipc")
                (:file "delegate")
+               (:file "options")
                (:file "webview")
                (:file "eval")))
 

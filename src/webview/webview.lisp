@@ -30,6 +30,8 @@ and a RESPONDER instead, returns at once, and answers later with RESPOND,
 from any thread. ON-REQUEST is shorthand for one synchronous protocol named
 SCHEME.
 
+USER-AGENT replaces the user agent string WebKit sends.
+
 INIT-SCRIPTS run at the start of every document, before the page's own
 scripts: each is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T).
 
@@ -110,6 +112,7 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
     (loop for (scheme) in (getf options :protocols)
           do (send configuration "setURLSchemeHandler:forURLScheme:"
                    :pointer delegate :pointer (ns-string scheme) :void))
+    (configure configuration options)
     (let ((webview (send (send (find-class* "WKWebView") "alloc")
                          "initWithFrame:configuration:"
                          (:struct ns-rect)
@@ -120,6 +123,7 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
       (release configuration)
       (release delegate)
       (setf (gethash (cffi:pointer-address webview) *routes*) options)
+      (apply-view-options webview options)
       (send window "setContentView:" :pointer webview :void)
       webview)))
 
