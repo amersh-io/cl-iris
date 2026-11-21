@@ -6,7 +6,12 @@
 
 (defpackage #:cl-iris/objc
   (:use #:cl)
-  (:export #:find-class*
+  (:export #:objc-error
+           #:objc-error-name
+           #:no-such-class
+           #:no-such-protocol
+           #:class-definition-error
+           #:find-class*
            #:selector
            #:send
            #:ns-string

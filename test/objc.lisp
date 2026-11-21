@@ -24,6 +24,12 @@
   (with-autorelease-pool
     (check "find a class by name"
            (not (cffi:null-pointer-p (find-class* "NSObject"))))
+    (check "a missing class signals NO-SUCH-CLASS"
+           (handler-case (progn (find-class* "CLIrisNoSuchClass") nil)
+             (no-such-class (c) (equal "CLIrisNoSuchClass" (objc-error-name c)))))
+    (check "a missing protocol signals NO-SUCH-PROTOCOL"
+           (handler-case (progn (add-protocol (find-class* "NSObject") "CLIrisNoSuchProtocol") nil)
+             (no-such-protocol () t)))
     (check "a missing class is NIL when not required"
            (null (find-class* "CLIrisNoSuchClass" nil)))
     (check "selectors are interned"

@@ -15,6 +15,7 @@
   :pathname "src/objc/"
   :serial t
   :components ((:file "package")
+               (:file "conditions")
                (:file "runtime")
                (:file "messaging")
                (:file "strings")

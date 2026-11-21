@@ -5,11 +5,11 @@
 ;;; Classes and selectors
 
 (defun find-class* (name &optional (errorp t))
-  "Return the Objective-C class named NAME, or signal an error if there is none
-and ERRORP is true (otherwise return NIL)."
+  "Return the Objective-C class named NAME, or signal NO-SUCH-CLASS if there is
+none and ERRORP is true (otherwise return NIL)."
   (let ((class (%get-class name)))
     (cond ((not (cffi:null-pointer-p class)) class)
-          (errorp (error "No Objective-C class named ~S." name))
+          (errorp (error 'no-such-class :name name))
           (t nil))))
 
 (defun selector (name)

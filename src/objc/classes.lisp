@@ -10,7 +10,7 @@ SUPERCLASS (a class name) when it does not exist yet."
   (or (find-class* name nil)
       (let ((class (%allocate-class-pair (find-class* superclass) name 0)))
         (when (cffi:null-pointer-p class)
-          (error "Could not allocate Objective-C class ~S." name))
+          (error 'class-definition-error :name name))
         (%register-class-pair class)
         class)))
 
@@ -34,5 +34,5 @@ the protocol was not found."
     (cond ((not (cffi:null-pointer-p protocol))
            (%add-protocol class protocol)
            class)
-          (errorp (error "No Objective-C protocol named ~S." name))
+          (errorp (error 'no-such-protocol :name name))
           (t nil))))
