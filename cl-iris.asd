@@ -85,5 +85,6 @@
                (:file "window")
                (:file "webview")
                (:file "examples")
+               (:file "lifecycle")
                (:file "run"))
   :perform (test-op (o c) (symbol-call :cl-iris/test :run!)))

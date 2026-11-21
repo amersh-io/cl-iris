@@ -16,6 +16,7 @@ signal an error if any of them fails."
   (documentation-checks)
   (with-application-checks)
   (example-checks)
+  (lifecycle-checks)
   (application-tests (list #'window-checks #'live-redefinition-checks #'webview-checks)
                      :timeout 300)
   (when *only*
