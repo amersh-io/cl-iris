@@ -28,7 +28,14 @@ jobs:
         run: |
           scripts/test > test.log 2>&1 || true
           grep -E '^(ok|FAIL)' test.log || true
-          grep -q '^ALL-TESTS-PASSED' test.log || { tail -80 test.log; exit 1; }
+          grep -q '^ALL-TESTS-PASSED' test.log || { grep -v -E '^(ok |; )' test.log | tail -200; exit 1; }
+
+      - name: Keep the test log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-log
+          path: test.log
 
   spec:
     runs-on: ubuntu-latest
