@@ -38,8 +38,14 @@
   :description "WKWebView with JavaScript <-> Lisp messaging and custom URL schemes."
   :license "Apache-2.0"
   :depends-on ("cl-iris/window")
-  :pathname "src/"
-  :components ((:file "webview")))
+  :pathname "src/webview/"
+  :serial t
+  :components ((:file "package")
+               (:file "runtime")
+               (:file "convert")
+               (:file "delegate")
+               (:file "webview")
+               (:file "eval")))
 
 (defsystem "cl-iris/test"
   :license "Apache-2.0"
