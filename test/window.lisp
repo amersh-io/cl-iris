@@ -132,9 +132,10 @@ AppKit animates."
                 (list "#12" "#gggggg" '(2 0 0) "red" 42)))
   (let ((window (make-window :title "colors" :width 300 :height 200 :activate nil)))
     (check "a window's opacity can be changed"
-           (progn (setf (window-alpha window) 0.5)
-                  (prog1 (= 0.5d0 (window-alpha window))
-                    (setf (window-alpha window) 1))))
+           (let ((before (window-alpha window)))
+             (setf (window-alpha window) 0.5)
+             (prog1 (= 0.5d0 (window-alpha window))
+               (setf (window-alpha window) before))))
     (check "a window's background color can be set and read back"
            (progn (setf (window-background-color window) "#336699")
                   (every (lambda (a b) (< (abs (- a b)) 1d-3))
@@ -521,18 +522,25 @@ application. Give up and exit the process if it takes more than TIMEOUT seconds.
                      (finish-output)
                      (sb-ext:exit :code 3 :abort t))
                    :name "cl-iris test watchdog")))
-    (let ((worker nil) (finished nil))
-      (run-application
-       ;; Tests run often and must not take focus or add a Dock icon.
-       :activation-policy :accessory
-       :on-launch (lambda ()
-                    (setf worker
-                          (sb-thread:make-thread
-                           (lambda ()
-                             (unwind-protect (progn (mapc #'funcall checks)
-                                                    (setf finished t))
-                               (stop-application)))
-                           :name "cl-iris test worker"))))
+    (let ((worker nil) (finished nil) (defaults *window-defaults*))
+      ;; Test windows are invisible, so a test run does not flash on the
+      ;; screen; CL_IRIS_TEST_VISIBLE=1 shows them. Set globally: the checks
+      ;; run in another thread, which does not see this thread's bindings.
+      (unless (sb-ext:posix-getenv "CL_IRIS_TEST_VISIBLE")
+        (setf *window-defaults* (list* :alpha 0 defaults)))
+      (unwind-protect
+           (run-application
+            ;; Tests run often and must not take focus or add a Dock icon.
+            :activation-policy :accessory
+            :on-launch (lambda ()
+                         (setf worker
+                               (sb-thread:make-thread
+                                (lambda ()
+                                  (unwind-protect (progn (mapc #'funcall checks)
+                                                         (setf finished t))
+                                    (stop-application)))
+                                :name "cl-iris test worker"))))
+        (setf *window-defaults* defaults))
       ;; The loop must not end under the checks: finish them before going on.
       (when worker
         (sb-thread:join-thread worker :default nil))

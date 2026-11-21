@@ -6,7 +6,12 @@
 
 (defconstant +backing-store-buffered+ 2)
 
-(defun make-window (&key (title "") (x 200) (y 200) (width 800) (height 600)
+(defvar *window-defaults* '()
+  "A property list of MAKE-WINDOW options used wherever a call leaves them
+out, e.g. '(:alpha 0 :activate nil) to keep every window out of sight.")
+
+(defun make-window (&rest options
+                    &key (title "") (x 200) (y 200) (width 800) (height 600)
                       (style *default-style*) (resizable t) (decorations t)
                       center min-size max-size level alpha background-color
                       transparent appearance (title-visible t) titlebar-transparent
@@ -25,7 +30,14 @@ WINDOW-CLOSE-REQUEST-HANDLER set.
 
 A VISIBLE window is shown at once; otherwise it waits for SHOW-WINDOW. With
 ACTIVATE, the application is brought to the front; without it, the window
-opens without taking focus from other applications."
+opens without taking focus from other applications. Options left out are
+taken from *WINDOW-DEFAULTS* first."
+  (when *window-defaults*
+    ;; Explicit options come first, so they win over the defaults.
+    (return-from make-window
+      (let ((defaults *window-defaults*)
+            (*window-defaults* '()))
+        (apply #'make-window (append options defaults)))))
   (check-type title string)
   (check-type x real)
   (check-type y real)

@@ -19,6 +19,7 @@
            #:run-application
            #:stop-application
            #:make-window
+           #:*window-defaults*
            #:close-window
            #:window-number
            #:window-title
