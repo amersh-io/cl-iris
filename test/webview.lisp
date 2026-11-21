@@ -54,6 +54,14 @@
              (let ((before (handle-count)))
                (dotimes (i 5) (eval-js webview "1"))
                (wait-until (lambda () (= before (handle-count))))))
+      (check "eval-js gives up after its timeout"
+             (handler-case
+                 (progn (eval-js webview "const t = Date.now(); while (Date.now() - t < 500) {}; 1"
+                                 :timeout 0.1)
+                        nil)
+               (main-thread-timeout () t)))
+      (check "eval-js works again after a timeout"
+             (eql 2 (eval-js webview "1 + 1")))
       (check "eval-js refuses to wait on the main thread"
              (handler-case (progn (on-main (lambda () (eval-js webview "1"))) nil)
                (error (e) (search "main thread" (princ-to-string e)))))
