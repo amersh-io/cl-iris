@@ -1,0 +1,18 @@
+#!/bin/sh
+# Run the `quint test` suites of every Quint model in spec/.
+# Prints SPEC-TESTS-PASSED at the end when all of them pass.
+set -eu
+
+cd "$(dirname "$0")/../spec"
+
+for m in now flagCheck guarded; do
+  quint test main-thread-dispatch.qnt --main "$m" --max-samples 1
+done
+for m in sync syncNested asyncNaive asyncAddrFlag asyncGuarded; do
+  quint test url-scheme-task.qnt --main "$m" --max-samples 1
+done
+for m in now nowNested nowLateRelease nowDrop copyDispose; do
+  quint test completion-block-lifetime.qnt --main "$m" --max-samples 1
+done
+
+echo SPEC-TESTS-PASSED

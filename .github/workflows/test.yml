@@ -29,3 +29,21 @@ jobs:
           scripts/test > test.log 2>&1 || true
           grep -E '^(ok|FAIL)' test.log || true
           grep -q '^ALL-TESTS-PASSED' test.log || { tail -80 test.log; exit 1; }
+
+  spec:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Quint
+        run: npm install -g @informalsystems/quint@0.32.0
+
+      - name: Run the Quint model tests
+        run: |
+          scripts/check-spec > spec.log 2>&1 || true
+          grep -q '^SPEC-TESTS-PASSED' spec.log || { tail -80 spec.log; exit 1; }
