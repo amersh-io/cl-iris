@@ -137,3 +137,36 @@
              (cffi:pointer-eq (send object "class")
                               (ensure-class "CLIrisTestObject" "NSObject")))
       (release object))))
+
+;;; Classes declared with DEFINE-OBJC-CLASS
+
+(define-objc-class "CLIrisDeclaredCounter" ()
+  (:method "add:to:" :long-long (self (a :long-long) (b :long-long))
+    (+ a b))
+  (:method "describe:" :pointer (self (name :pointer))
+    (ns-string (format nil "<~A>" (lisp-string name))))
+  (:method "fail" :int (self)
+    (error "method boom")))
+
+(defun declared-class-tests ()
+  (with-autorelease-pool
+    (let ((object (send (send (find-class* "CLIrisDeclaredCounter") "alloc") "init")))
+      (check "a declared class answers its Lisp methods"
+             (and (= 5 (send object "add:to:" :long-long 2 :long-long 3 :long-long))
+                  (string= "<x>" (lisp-string (send object "describe:" :pointer (ns-string "x"))))))
+      (check "a method's error is reported and a zero value returned"
+             (let ((seen nil) (old *error-reporter*))
+               (setf *error-reporter* (lambda (where c) (declare (ignore where)) (setf seen c)))
+               (unwind-protect (and (= 0 (send object "fail" :int)) seen)
+                 (setf *error-reporter* old))))
+      (check "method type encodings follow the CFFI types"
+             (string= "q@:qq"
+                      (cffi:foreign-string-to-lisp
+                       (cffi:foreign-funcall "method_getTypeEncoding"
+                                             :pointer (cffi:foreign-funcall
+                                                       "class_getInstanceMethod"
+                                                       :pointer (find-class* "CLIrisDeclaredCounter")
+                                                       :pointer (selector "add:to:")
+                                                       :pointer)
+                                             :pointer))))
+      (release object))))

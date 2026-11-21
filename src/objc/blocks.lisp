@@ -95,14 +95,6 @@ use WITH-BLOCK). APIs that keep the block take their own reference."
   "The Lisp function a block made by MAKE-BLOCK calls."
   (values (handle-value (cffi:mem-ref block :int64 +block-handle-offset+))))
 
-(defun error-return-value (type)
-  (case type
-    ((:void :bool) nil)
-    (:pointer '(cffi:null-pointer))
-    ((:double) 0d0)
-    ((:float) 0f0)
-    (t 0)))
-
 (defmacro define-block-invoker (name return-type (&rest arguments))
   "Define NAME as a CFFI callback to use as the invoke function of blocks
 whose arguments are ARGUMENTS, a list of (name type) as in CFFI:DEFCALLBACK.

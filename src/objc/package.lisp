@@ -49,6 +49,7 @@
            #:with-autorelease-pool
            #:ensure-class
            #:set-method
+           #:define-objc-class
            #:add-protocol
            #:retain
            #:release

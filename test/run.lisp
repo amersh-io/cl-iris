@@ -5,6 +5,7 @@
   (setf *failures* '())
   (objc-tests)
   (block-tests)
+  (declared-class-tests)
   (main-thread-wait-checks)
   (application-tests (list #'window-checks #'webview-checks))
   (when *failures*
