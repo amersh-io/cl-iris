@@ -61,6 +61,7 @@
            #:window-closed-p
            #:window-closed
            #:on-window
+           #:windows
            #:window-shadow-p
            #:window-ignores-mouse-p
            #:window-content-protected-p

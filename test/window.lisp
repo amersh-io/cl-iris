@@ -453,6 +453,10 @@ replaces it."
                     (= 1 (count :closed events :key #'car))))
       (check "closing a window twice is harmless"
              (null (close-window window)))))
+  (let ((window (make-window :title "listed" :activate nil)))
+    (check "a new window is among the windows"
+           (member (cffi:pointer-address window) (windows) :key #'cffi:pointer-address))
+    (close-window window))
   (let* ((closed nil)
          (window (make-window :title "closed by lisp" :activate nil
                               :on-event (lambda (window event &rest arguments)
@@ -463,6 +467,8 @@ replaces it."
            closed)
     (check "a window closed by close-window counts as closed"
            (window-closed-p window))
+    (check "a released window is no longer among the windows"
+           (not (member (cffi:pointer-address window) (windows) :key #'cffi:pointer-address)))
     (check "a released window is refused instead of crashing the process"
            (every (lambda (f)
                     (handler-case (progn (funcall f window) nil)

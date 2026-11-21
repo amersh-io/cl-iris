@@ -128,3 +128,12 @@ returns true. NIL lets every request through."
   "True once WINDOW has been closed, by the user or by CLOSE-WINDOW."
   (on-main (lambda () (let ((record (window-record window)))
                         (or (null record) (window-record-closed record))))))
+
+;;; Windows made by MAKE-WINDOW
+
+(defun windows ()
+  "Every window made by MAKE-WINDOW and not yet released by CLOSE-WINDOW,
+including those the user has closed."
+  (on-main (lambda ()
+             (loop for address being the hash-keys of *windows*
+                   collect (cffi:make-pointer address)))))
