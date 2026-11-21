@@ -59,6 +59,7 @@
                (:file "ipc")
                (:file "navigation")
                (:file "ui")
+               (:file "download")
                (:file "delegate")
                (:file "options")
                (:file "webview")

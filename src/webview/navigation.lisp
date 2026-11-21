@@ -21,15 +21,25 @@ and true, or NIL and NIL when there is no handler or it signalled (reported)."
 
 (defconstant +navigation-cancel+ 0)
 (defconstant +navigation-allow+ 1)
+(defconstant +navigation-download+ 2)
 
 (defun decide-navigation (webview action decide)
-  "Answer the decision block DECIDE for the WKNavigationAction ACTION, once."
+  "Answer the decision block DECIDE for the WKNavigationAction ACTION, once.
+A link with the download attribute becomes a download."
   (let ((url (url-string (send (send action "request") "URL"))))
     (multiple-value-bind (allow handled)
         (call-handler webview :on-navigate "on-navigate" url)
-      (call-block decide :long (if (or (not handled) allow)
-                                   +navigation-allow+
-                                   +navigation-cancel+)))))
+      (call-block decide :long (cond ((and handled (not allow)) +navigation-cancel+)
+                                     ((send action "shouldPerformDownload" :bool)
+                                      +navigation-download+)
+                                     (t +navigation-allow+))))))
+
+(defun decide-response (response decide)
+  "Answer the decision block DECIDE for the WKNavigationResponse RESPONSE,
+once: what WebKit cannot show is downloaded."
+  (call-block decide :long (if (send response "canShowMIMEType" :bool)
+                               +navigation-allow+
+                               +navigation-download+)))
 
 ;;; Loading
 

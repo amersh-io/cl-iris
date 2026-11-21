@@ -36,33 +36,40 @@
   (write-string (substitute #\Return #\| (apply #'format nil control arguments)) stream)
   (finish-output stream))
 
-(defun serve-proxied (client)
+(defun proxied-page (request-line)
+  (declare (ignore request-line))
+  (values "<title>proxied</title>" "text/html"))
+
+(defun serve-http (client respond)
+  "Answer one HTTP request on CLIENT -- through a CONNECT tunnel too -- with
+the body and content type RESPOND returns for its request line."
   (let ((stream (sb-bsd-sockets:socket-make-stream
                  client :input t :output t :element-type 'character
                         :external-format :latin-1 :buffering :full)))
     (unwind-protect
          (ignore-errors
-          (let ((head (read-head stream)))
-            (push (first head) *proxied-lines*)
-            (when (eql 0 (search "CONNECT" (first head)))
+          (let ((line (first (read-head stream))))
+            (push line *proxied-lines*)
+            (when (eql 0 (search "CONNECT" line))
               (crlf-format stream "HTTP/1.1 200 Connection established|~%|~%")
-              (push (first (read-head stream)) *proxied-lines*))
-            (let ((body "<title>proxied</title>"))
-              (crlf-format stream "HTTP/1.1 200 OK|~%Content-Type: text/html|~%~
+              (setf line (first (read-head stream)))
+              (push line *proxied-lines*))
+            (multiple-value-bind (body content-type) (funcall respond line)
+              (crlf-format stream "HTTP/1.1 200 OK|~%Content-Type: ~A|~%~
                                    Content-Length: ~D|~%Connection: close|~%|~%~A"
-                           (length body) body))))
+                           content-type (length body) body))))
       (ignore-errors (close stream)))))
 
-(defun start-test-proxy ()
-  "Listen on a free local port and answer every request through it with a
-small page; return the port."
+(defun start-test-server (&optional (respond #'proxied-page))
+  "Listen on a free local port, answering every request -- direct, or as a
+proxy -- with what RESPOND returns for its request line; return the port."
   (let ((socket (make-instance 'sb-bsd-sockets:inet-socket :type :stream :protocol :tcp)))
     (sb-bsd-sockets:socket-bind socket #(127 0 0 1) 0)
     (sb-bsd-sockets:socket-listen socket 5)
     (sb-thread:make-thread
      (lambda ()
-       (loop (serve-proxied (sb-bsd-sockets:socket-accept socket))))
-     :name "cl-iris test proxy")
+       (loop (serve-http (sb-bsd-sockets:socket-accept socket) respond)))
+     :name "cl-iris test server")
     (nth-value 1 (sb-bsd-sockets:socket-name socket))))
 
 (defun pdf-text (path)
@@ -426,7 +433,7 @@ small page; return the port."
                (= 1 (webview-proxy-count socks)))
         (destroy-webview http)
         (destroy-webview socks))
-      (let* ((port (start-test-proxy))
+      (let* ((port (start-test-server))
              (other (make-webview window :incognito t :proxy (list :http "127.0.0.1" port)
                                          :url "http://proxied.invalid/")))
         (check "a webview's requests really go through its proxy"
@@ -746,6 +753,36 @@ small page; return the port."
           (check "print-webview writes the page to a PDF file"
                  (wait-until (lambda () (and (probe-file pdf) (pdf-text pdf)
                                              (search "Printed by cl-iris" (pdf-text pdf))))))
+          (destroy-webview other)))
+      (uiop:with-temporary-file (:pathname saved :type "bin" :prefix "cl-iris-download")
+        (delete-file saved)
+        (let* ((events '())
+               (port (start-test-server
+                      (lambda (line)
+                        (if (search "/file" line)
+                            (values "downloaded bytes" "application/x-cl-iris-test")
+                            (values "<title>dl</title>" "text/html")))))
+               (home (format nil "http://127.0.0.1:~D/" port))
+               (other (make-webview
+                       window
+                       :on-download (lambda (event url &optional detail)
+                                      (push (list event url detail) events)
+                                      (when (eq event :started) saved))
+                       :url home)))
+          (flet ((saw (event) (find event events :key #'first)))
+            (wait-until (lambda () (equal "dl" (eval-js other "document.title"))))
+            (check "a response WebKit cannot show is downloaded where on-download says"
+                   (progn (load-url other (format nil "~Afile" home))
+                          (and (wait-until (lambda () (saw :finished)))
+                               (equal (list :started (format nil "~Afile" home) "file") (saw :started))
+                               (equal "downloaded bytes" (uiop:read-file-string saved)))))
+            (setf events '())
+            (when (probe-file saved) (delete-file saved))
+            (check "a link with the download attribute is downloaded under its name"
+                   (progn (eval-js other "const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['blob bytes'])); a.download = 'named.bin'; document.body.appendChild(a); a.click(); 0")
+                          (and (wait-until (lambda () (saw :finished)))
+                               (equal "named.bin" (third (saw :started)))
+                               (equal "blob bytes" (uiop:read-file-string saved))))))
           (destroy-webview other)))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))

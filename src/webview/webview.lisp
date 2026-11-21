@@ -125,6 +125,13 @@ shown as a sheet on the window.
 ON-PERMISSION decides a page's request for :CAMERA, :MICROPHONE or
 :CAMERA-AND-MICROPHONE, called with that and the page's origin; it returns
 :GRANT, :DENY or :PROMPT (ask the user, as WebKit does without it).
+ON-DOWNLOAD follows downloads: what WebKit cannot show, and links with the
+download attribute. It is called with :STARTED, the URL and the suggested
+file name, and returns the path to save to, or NIL to cancel; then with
+:FINISHED and the URL, or :FAILED, the URL and an error message. Without it,
+downloads go to the Downloads folder. (WebKit does not turn responses from a
+custom scheme into downloads; such a page can still offer a blob with the
+download attribute.)
 ON-PAGE-LOAD is called with :STARTED or :FINISHED and the URL as a page
 loads, or with :FAILED, the URL and an error message.
 ON-TITLE-CHANGE is called with the document's title whenever it changes.

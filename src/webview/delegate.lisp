@@ -10,7 +10,8 @@
 
 (define-objc-class "CLIrisWebViewDelegate"
     (:protocols ("WKScriptMessageHandler" "WKScriptMessageHandlerWithReply"
-                 "WKURLSchemeHandler" "WKNavigationDelegate" "WKUIDelegate"))
+                 "WKURLSchemeHandler" "WKNavigationDelegate" "WKUIDelegate"
+                 "WKDownloadDelegate"))
   (:method "userContentController:didReceiveScriptMessage:" :void
       (self (controller :pointer) (message :pointer))
     (declare (ignore controller))
@@ -71,6 +72,28 @@
       (self (webview :pointer) (origin :pointer) (frame :pointer) (type :long) (decide :pointer))
     (declare (ignore frame))
     (media-capture-permission webview origin type decide))
+  (:method "webView:decidePolicyForNavigationResponse:decisionHandler:" :void
+      (self (webview :pointer) (response :pointer) (decide :pointer))
+    (declare (ignore webview))
+    (decide-response response decide))
+  (:method "webView:navigationAction:didBecomeDownload:" :void
+      (self (webview :pointer) (action :pointer) (download :pointer))
+    (declare (ignore webview action))
+    (start-download download))
+  (:method "webView:navigationResponse:didBecomeDownload:" :void
+      (self (webview :pointer) (response :pointer) (download :pointer))
+    (declare (ignore webview response))
+    (start-download download))
+  (:method "download:decideDestinationUsingResponse:suggestedFilename:completionHandler:" :void
+      (self (download :pointer) (response :pointer) (suggested :pointer) (completion :pointer))
+    (declare (ignore response))
+    (download-destination download suggested completion))
+  (:method "downloadDidFinish:" :void (self (download :pointer))
+    (download-finished download))
+  (:method "download:didFailWithError:resumeData:" :void
+      (self (download :pointer) (failure :pointer) (resume-data :pointer))
+    (declare (ignore resume-data))
+    (download-failed download failure))
   (:method "webViewWebContentProcessDidTerminate:" :void (self (webview :pointer))
     (web-process-terminated webview))
   (:method "webView:didFailNavigation:withError:" :void
