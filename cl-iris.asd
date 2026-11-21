@@ -44,7 +44,8 @@
                (:file "color")
                (:file "attributes")
                (:file "events")
-               (:file "window")))
+               (:file "window")
+               (:file "screens")))
 
 (defsystem "cl-iris/webview"
   :description "WKWebView with JavaScript <-> Lisp messaging and custom URL schemes."

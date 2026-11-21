@@ -70,4 +70,8 @@
            #:menu-item-checked-p
            #:perform-menu-item
            #:application-name
-           #:default-menu-bar))
+           #:default-menu-bar
+           #:screens
+           #:main-screen
+           #:window-screen
+           #:window-scale-factor))

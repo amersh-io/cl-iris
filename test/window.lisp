@@ -191,6 +191,7 @@ AppKit animates."
     (check "make-window :decorations NIL leaves out the title bar"
            (not (window-decorated-p window)))
     (close-window window))
+  (screen-checks)
   (window-event-checks)
   (timer-checks)
   (default-menu-checks)
@@ -339,6 +340,26 @@ replaces it."
     (check "replacing the menu bar forgets the old Lisp actions"
            (progn (set-menu-bar '((:menu "App")))
                   (zerop (on-main (lambda () (hash-table-count cl-iris/window::*menu-actions*))))))))
+
+(defun screen-checks ()
+  (let ((screens (screens)))
+    (check "there is at least one screen, described in full"
+           (and screens
+                (every (lambda (screen)
+                         (and (stringp (getf screen :name))
+                              (= 4 (length (getf screen :frame)))
+                              (= 4 (length (getf screen :visible-frame)))
+                              (>= (getf screen :scale-factor) 1)))
+                       screens)))
+    (check "the main screen is one of the screens"
+           (member (getf (main-screen) :frame) screens
+                   :key (lambda (screen) (getf screen :frame)) :test #'equal))
+    (let ((window (make-window :title "screen" :width 200 :height 100 :activate nil)))
+      (check "a window knows its screen and scale factor"
+             (let ((screen (window-screen window)))
+               (and screen
+                    (= (window-scale-factor window) (getf screen :scale-factor)))))
+      (close-window window))))
 
 (defun window-event-checks ()
   (let* ((events '())
