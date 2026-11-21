@@ -175,7 +175,8 @@
 ;;; end it.
 
 (defun run-child-lisp (&rest forms)
-  "Run FORMS in a fresh Lisp with cl-iris loadable; return its output and exit code."
+  "Run FORMS, strings read in the child, in a fresh Lisp with cl-iris loadable;
+return its output and exit code."
   (let ((root (asdf:system-source-directory "cl-iris")))
     (multiple-value-bind (output error-output code)
         (uiop:run-program
@@ -183,23 +184,89 @@
                        "--load" (namestring (merge-pathnames ".qlot/setup.lisp" root))
                        "--eval" (format nil "(asdf:load-asd ~S)"
                                         (namestring (merge-pathnames "cl-iris.asd" root))))
-                 (loop for form in forms
-                       append (list "--eval" (let ((*package* (find-package :cl-user)))
-                                               (prin1-to-string form)))))
+                 (loop for form in forms append (list "--eval" form)))
          :directory root :output :string :error-output :string :ignore-error-status t)
       (values (concatenate 'string output error-output) code))))
 
 (defun exception-tests ()
   (multiple-value-bind (output code)
-      (run-child-lisp '(asdf:load-system "cl-iris/objc")
-                      '(cl-iris/objc:install-exception-reporter)
-                      '(defun cl-user::index-out-of-range ()
-                        (cl-iris/objc:send (cl-iris/objc:send (cl-iris/objc:find-class* "NSArray") "array")
-                         "objectAtIndex:" :unsigned-long 5))
-                      '(cl-user::index-out-of-range))
+      (run-child-lisp "(asdf:load-system \"cl-iris/objc\")"
+                      "(cl-iris/objc:install-exception-reporter)"
+                      "(defun index-out-of-range ()
+                         (cl-iris/objc:send (cl-iris/objc:send (cl-iris/objc:find-class* \"NSArray\") \"array\")
+                                            \"objectAtIndex:\" :unsigned-long 5))"
+                      "(index-out-of-range)")
     (check "an uncaught exception ends the process"
            (/= 0 code))
     (check "an uncaught exception is reported with its name and reason"
            (search "uncaught Objective-C exception NSRangeException" output))
     (check "an uncaught exception is reported with the Lisp backtrace"
            (search "INDEX-OUT-OF-RANGE" output))))
+
+;;; Saved images. A process that saves itself with SAVE-LISP-AND-DIE and is
+;;; started again must find no stale foreign addresses: classes, selectors,
+;;; block descriptors and declared classes all have to come back.
+
+(defun run-saved-core (core &rest forms)
+  (multiple-value-bind (output error-output code)
+      (uiop:run-program
+       (append (list sb-ext:*runtime-pathname* "--core" (namestring core)
+                     "--non-interactive" "--no-userinit")
+               (loop for form in forms append (list "--eval" form)))
+       :output :string :error-output :string :ignore-error-status t)
+    (values (concatenate 'string output error-output) code)))
+
+(defparameter *after-restart-forms*
+  '("(in-package :cl-iris/webview)"
+    "(format t \"~&STRING ~A~%\" (with-autorelease-pool (lisp-string (ns-string \"after restart\"))))"
+    "(format t \"~&DELEGATE ~A~%\" (not (null (find-class* \"CLIrisWebViewDelegate\" nil))))"
+    ;; dispatch_async copies the block, which reads its descriptor.
+    "(let ((done (sb-thread:make-semaphore)))
+       (with-block (b (cffi:callback js-completion)
+                      (lambda (value error)
+                        (declare (ignore value error))
+                        (sb-thread:signal-semaphore done)))
+         (cffi:foreign-funcall \"dispatch_async\"
+                               :pointer (cffi:foreign-funcall \"dispatch_get_global_queue\"
+                                                              :long 0 :unsigned-long 0 :pointer)
+                               :pointer b :void))
+       (when (sb-thread:wait-on-semaphore done :timeout 5)
+         (format t \"~&BLOCK CALLED~%\")))"
+    "(let ((result nil))
+       (run-application
+        :activation-policy :accessory
+        :on-launch (lambda ()
+                     (sb-thread:make-thread
+                      (lambda ()
+                        (unwind-protect
+                             (let* ((window (make-window :activate nil :width 200 :height 100))
+                                    (webview (make-webview window)))
+                               (setf result (eval-js webview \"6 * 7\"))
+                               (destroy-webview webview)
+                               (close-window window))
+                          (stop-application))))))
+       (format t \"~&EVAL ~A~%\" result))"))
+
+(defun saved-image-tests ()
+  (uiop:with-temporary-file (:pathname core :type "core" :keep nil)
+    (multiple-value-bind (output code)
+        (run-child-lisp "(asdf:load-system \"cl-iris/webview\")"
+                        ;; Make a block first, so foreign caches are filled
+                        ;; when the image is saved.
+                        "(cl-iris/objc:with-block (b (cffi:callback cl-iris/webview::js-completion)
+                                                   (lambda (v e) (declare (ignore v e))))
+                           b)"
+                        (format nil "(sb-ext:save-lisp-and-die ~S)" (namestring core)))
+      (declare (ignore output))
+      (check "an image with cl-iris loaded can be saved"
+             (and (zerop code) (probe-file core))))
+    (multiple-value-bind (output code)
+        (apply #'run-saved-core core *after-restart-forms*)
+      (check "a restarted image still converts strings"
+             (search "STRING after restart" output))
+      (check "a restarted image recreates declared classes"
+             (search "DELEGATE T" output))
+      (check "a restarted image builds and calls blocks"
+             (search "BLOCK CALLED" output))
+      (check "a restarted image opens a window and runs JavaScript"
+             (and (zerop code) (search "EVAL 42" output))))))

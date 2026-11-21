@@ -7,6 +7,7 @@
   (block-tests)
   (declared-class-tests)
   (exception-tests)
+  (saved-image-tests)
   (main-thread-wait-checks)
   (application-tests (list #'window-checks #'live-redefinition-checks #'webview-checks))
   (when *failures*
