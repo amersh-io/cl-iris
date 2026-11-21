@@ -1,7 +1,7 @@
 ;;;; Test harness for cl-iris. Run with (asdf:test-system "cl-iris").
 
 (defpackage #:cl-iris/test
-  (:use #:cl #:cl-iris/objc #:cl-iris/window)
+  (:use #:cl #:cl-iris/objc #:cl-iris/window #:cl-iris/webview)
   (:export #:run!))
 
 (in-package #:cl-iris/test)

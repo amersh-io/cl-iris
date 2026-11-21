@@ -14,7 +14,9 @@
            #:with-autorelease-pool
            #:ensure-class
            #:set-method
-           #:responds-to-p))
+           #:add-protocol
+           #:responds-to-p
+           #:kind-of-p))
 
 (in-package #:cl-iris/objc)
 
@@ -43,6 +45,12 @@
 
 (cffi:defcfun ("class_replaceMethod" %replace-method) :pointer
   (class :pointer) (selector :pointer) (imp :pointer) (types :string))
+
+(cffi:defcfun ("objc_getProtocol" %get-protocol) :pointer
+  (name :string))
+
+(cffi:defcfun ("class_addProtocol" %add-protocol) :bool
+  (class :pointer) (protocol :pointer))
 
 (cffi:defcfun ("objc_autoreleasePoolPush" %pool-push) :pointer)
 
@@ -83,6 +91,10 @@ variadic function, which is what the arm64 calling convention requires."
 (defun responds-to-p (object selector)
   "True if OBJECT responds to SELECTOR."
   (send object "respondsToSelector:" :pointer (selector selector) :bool))
+
+(defun kind-of-p (object class-name)
+  "True if OBJECT is an instance of the class CLASS-NAME or of a subclass."
+  (send object "isKindOfClass:" :pointer (find-class* class-name) :bool))
 
 ;;; Strings
 
@@ -125,3 +137,11 @@ type encoding of the method, e.g. \"q@:qq\".
 IMP receives the receiver and the selector before the method's own arguments."
   (%replace-method class (selector selector) imp types)
   class)
+
+(defun add-protocol (class name)
+  "Declare that CLASS conforms to the protocol NAME. Adding it twice is harmless."
+  (let ((protocol (%get-protocol name)))
+    (when (cffi:null-pointer-p protocol)
+      (error "No Objective-C protocol named ~S." name))
+    (%add-protocol class protocol)
+    class))

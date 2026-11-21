@@ -1,5 +1,6 @@
-;;;; Tests for cl-iris/window. They run on a worker thread while the main
-;;;; thread sits in RUN-APPLICATION, which is how cl-iris is meant to be used.
+;;;; Tests for cl-iris/window. Window and webview checks run on a worker
+;;;; thread while the main thread sits in RUN-APPLICATION, which is how
+;;;; cl-iris is meant to be used.
 
 (in-package #:cl-iris/test)
 
@@ -27,13 +28,13 @@
            (equal '(640d0 400d0) (multiple-value-list (window-content-size window))))
     (close-window window)))
 
-(defun window-tests (&key (timeout 60))
-  "Run WINDOW-CHECKS on a worker thread while this, the main thread, runs the
+(defun application-tests (checks &key (timeout 60))
+  "Call each of CHECKS on a worker thread while this, the main thread, runs the
 application. Give up and exit the process if it takes more than TIMEOUT seconds."
   (let ((watchdog (sb-thread:make-thread
                    (lambda ()
                      (sleep timeout)
-                     (format t "~&FAIL  window tests timed out after ~Ds~%" timeout)
+                     (format t "~&FAIL  application tests timed out after ~Ds~%" timeout)
                      (finish-output)
                      (sb-ext:exit :code 3 :abort t))
                    :name "cl-iris test watchdog")))
@@ -41,7 +42,7 @@ application. Give up and exit the process if it takes more than TIMEOUT seconds.
      :on-launch (lambda ()
                   (sb-thread:make-thread
                    (lambda ()
-                     (unwind-protect (window-checks)
+                     (unwind-protect (mapc #'funcall checks)
                        (stop-application)))
                    :name "cl-iris test worker")))
     (sb-thread:terminate-thread watchdog)))

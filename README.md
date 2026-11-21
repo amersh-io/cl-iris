@@ -7,8 +7,8 @@ cl-iris aims to give a running SBCL process an AppKit window with a
 using nothing but [CFFI](https://cffi.common-lisp.dev/). Everything can be
 redefined from the REPL while the window is open.
 
-> **Status:** early. The Objective-C runtime and window layers work; the
-> webview layer is next.
+> **Status:** early, but the three layers work end to end: a page served
+> from Lisp can message Lisp, and Lisp can answer it with JavaScript.
 
 ## Layers
 
@@ -19,7 +19,7 @@ before it:
 |------------------|---------------------------------------------------------------------|---------|
 | `cl-iris/objc`   | Objective-C runtime: classes, selectors, `objc_msgSend`, `NSString`, autorelease pools, classes defined at run time with Lisp methods | working |
 | `cl-iris/window` | The `NSApplication` loop on the main thread, `NSWindow`, dispatching work to the main thread through GCD | working |
-| `cl-iris/webview`| `WKWebView`; JavaScript → Lisp messages (`WKScriptMessageHandler`), Lisp → JavaScript evaluation, custom URL schemes (`WKURLSchemeHandler`) | planned |
+| `cl-iris/webview`| `WKWebView`; JavaScript → Lisp messages (`WKScriptMessageHandler`), Lisp → JavaScript evaluation, custom URL schemes (`WKURLSchemeHandler`) | working |
 
 The only dependency is CFFI. `cl-iris/window` also uses `cffi-libffi`, which
 ships with CFFI and is needed to pass structs such as `NSRect` by value;
@@ -93,6 +93,37 @@ so they work from any thread — a REPL thread, for instance:
 ```
 
 An error inside `on-main` is signalled again in the thread that called it.
+
+### Webviews
+
+```lisp
+(asdf:load-system "cl-iris/webview")
+(in-package #:cl-iris/webview)
+
+;; From a worker thread, while the main thread is in RUN-APPLICATION:
+(let* ((window (cl-iris/window:make-window :title "hello"))
+       (webview
+         (make-webview
+          window
+          ;; Pages are served from Lisp under iris://
+          :on-request (lambda (url)
+                        (declare (ignore url))
+                        "<script>
+                           window.webkit.messageHandlers.iris.postMessage('hi from ' + location.href)
+                         </script>")
+          ;; Called on the main thread with what the page posts.
+          :on-message (lambda (message) (print message))
+          :url "iris://app/index.html")))
+  (eval-js webview "document.title = 'set from Lisp'; 1 + 41"))
+;; => 42
+```
+
+- `on-request` returns a string or octets and, optionally, a content type;
+  `nil` answers 404. `fetch()` from the page reaches it too.
+- `eval-js` waits for the result and converts strings and numbers; a
+  JavaScript exception becomes a `javascript-error`. It cannot wait on the
+  main thread (which must run the script) — there, pass `:wait nil` and a
+  `:callback`.
 
 ## Notes
 

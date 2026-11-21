@@ -5,7 +5,7 @@
   :license "MIT"
   :version "0.0.1"
   :homepage "https://github.com/amersh-io/cl-iris"
-  :depends-on ("cl-iris/objc" "cl-iris/window")
+  :depends-on ("cl-iris/objc" "cl-iris/window" "cl-iris/webview")
   :in-order-to ((test-op (test-op "cl-iris/test"))))
 
 (defsystem "cl-iris/objc"
@@ -22,13 +22,21 @@
   :pathname "src/"
   :components ((:file "window")))
 
+(defsystem "cl-iris/webview"
+  :description "WKWebView with JavaScript <-> Lisp messaging and custom URL schemes."
+  :license "MIT"
+  :depends-on ("cl-iris/window")
+  :pathname "src/"
+  :components ((:file "webview")))
+
 (defsystem "cl-iris/test"
   :license "MIT"
-  :depends-on ("cl-iris/objc" "cl-iris/window")
+  :depends-on ("cl-iris/objc" "cl-iris/window" "cl-iris/webview")
   :pathname "test/"
   :serial t
   :components ((:file "package")
                (:file "objc")
                (:file "window")
+               (:file "webview")
                (:file "run"))
   :perform (test-op (o c) (symbol-call :cl-iris/test :run!)))
