@@ -65,6 +65,18 @@ small page; return the port."
      :name "cl-iris test proxy")
     (nth-value 1 (sb-bsd-sockets:socket-name socket))))
 
+(defun pdf-text (path)
+  "The text of the PDF file at PATH, read with PDFKit, or NIL."
+  (cffi:load-foreign-library "/System/Library/Frameworks/PDFKit.framework/PDFKit")
+  (with-autorelease-pool
+    (let ((document (send (send (find-class* "PDFDocument") "alloc") "initWithURL:"
+                          :pointer (send (find-class* "NSURL") "fileURLWithPath:"
+                                         :pointer (ns-string (namestring path))))))
+      (unless (cffi:null-pointer-p document)
+        (prog1 (let ((text (send document "string")))
+                 (unless (cffi:null-pointer-p text) (lisp-string text)))
+          (release document))))))
+
 (defvar *late-bound-messages* '())
 
 (defun late-bound-handler (message)
@@ -726,6 +738,15 @@ small page; return the port."
                         (delete-cookie other (named "flavor" (cookies other)))
                         (not (named "flavor" (cookies other))))))
         (destroy-webview other))
+      (uiop:with-temporary-file (:pathname pdf :type "pdf" :prefix "cl-iris-print")
+        (delete-file pdf)
+        (let ((other (make-webview window :html "<title>print</title><h1>Printed by cl-iris</h1>")))
+          (wait-until (lambda () (equal "print" (eval-js other "document.title"))))
+          (print-webview other :pdf pdf)
+          (check "print-webview writes the page to a PDF file"
+                 (wait-until (lambda () (and (probe-file pdf) (pdf-text pdf)
+                                             (search "Printed by cl-iris" (pdf-text pdf))))))
+          (destroy-webview other)))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

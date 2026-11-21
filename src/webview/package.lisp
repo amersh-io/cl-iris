@@ -38,6 +38,7 @@
            #:set-cookie
            #:delete-cookie
            #:clear-browsing-data
+           #:print-webview
            #:eval-js
            #:javascript-error
            #:request

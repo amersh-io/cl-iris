@@ -64,6 +64,7 @@
                (:file "webview")
                (:file "history")
                (:file "storage")
+               (:file "print")
                (:file "eval")))
 
 (defsystem "cl-iris/test"
