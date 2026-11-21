@@ -115,8 +115,8 @@ AppKit animates."
              (focus-window other :activate nil)
              (let ((before (front)))
                (focus-window window :activate nil)
-               (and (= before (cffi:pointer-address other))
-                    (= (front) (cffi:pointer-address window))))))
+               (and (= before (objc-address other))
+                    (= (front) (objc-address window))))))
     (close-window other)
     (close-window window))
   (check "hex colors are read as sRGB components"
@@ -441,12 +441,13 @@ replaces it."
 (defun window-event-checks ()
   (let* ((events '())
          (allow-close nil)
+         (handed '())
          (window (make-window :title "events" :width 300 :height 200 :activate nil
                               :on-event (lambda (window event &rest arguments)
-                                          (declare (ignore window))
+                                          (push window handed)
                                           (push (cons event arguments) events))
                               :on-close-request (lambda (window)
-                                                  (declare (ignore window))
+                                                  (push window handed)
                                                   allow-close))))
     (flet ((seen (event) (find event events :key #'car))
            (post (selector)
@@ -463,6 +464,8 @@ replaces it."
       (check "moving a window reports :moved with the new position"
              (progn (move-window window 150 160)
                     (equal '(:moved 150d0 160d0) (seen :moved))))
+      (check "handlers are given the WINDOW object, not its NSWindow"
+             (and handed (every (lambda (w) (eq w window)) handed)))
       (check "gaining and losing focus are reported"
              (progn (post "windowDidBecomeKey:")
                     (post "windowDidResignKey:")
@@ -489,7 +492,14 @@ replaces it."
              (null (close-window window)))))
   (let ((window (make-window :title "listed" :activate nil)))
     (check "a new window is among the windows"
-           (member (cffi:pointer-address window) (windows) :key #'cffi:pointer-address))
+           (member window (windows)))
+    (check "a window is a WINDOW object that prints its title and number"
+           (and (typep window 'window)
+                (search "\"listed\" #" (prin1-to-string window))))
+    (check "window-pointer is the NSWindow, and find-window maps it back"
+           (and (cffi:pointerp (window-pointer window))
+                (eq window (find-window (window-pointer window)))
+                (string= "NSWindow" (lisp-string (send (send window "class") "description")))))
     (close-window window))
   (let* ((closed nil)
          (window (make-window :title "closed by lisp" :activate nil
@@ -502,7 +512,7 @@ replaces it."
     (check "a window closed by close-window counts as closed"
            (window-closed-p window))
     (check "a released window is no longer among the windows"
-           (not (member (cffi:pointer-address window) (windows) :key #'cffi:pointer-address)))
+           (not (member window (windows))))
     (check "a released window is refused instead of crashing the process"
            (every (lambda (f)
                     (handler-case (progn (funcall f window) nil)

@@ -18,6 +18,9 @@
            #:with-cocoa-float-traps
            #:run-application
            #:stop-application
+           #:window
+           #:window-pointer
+           #:find-window
            #:make-window
            #:*window-defaults*
            #:close-window

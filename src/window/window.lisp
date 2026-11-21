@@ -17,7 +17,8 @@ out, e.g. '(:alpha 0 :activate nil) to keep every window out of sight.")
                       transparent appearance (title-visible t) titlebar-transparent
                       on-event on-close-request (visible t) (activate t))
   "Open a window whose content area is WIDTH by HEIGHT points, with its
-bottom-left corner at X, Y on the screen (or CENTER-ed), and return it.
+bottom-left corner at X, Y on the screen (or CENTER-ed), and return it as
+a WINDOW object.
 
 STYLE is a list of keywords as for WINDOW-STYLE; the default has a title bar
 with all three buttons and can be resized, and NIL makes a borderless
@@ -56,7 +57,8 @@ taken from *WINDOW-DEFAULTS* first."
     (let ((window
             (on-main
              (lambda ()
-               (let ((window (send (send (find-class* "NSWindow") "alloc")
+               (let ((object nil)
+                     (window (send (send (find-class* "NSWindow") "alloc")
                                    "initWithContentRect:styleMask:backing:defer:"
                                    (:struct ns-rect) (make-rect x y width height)
                                    :unsigned-long mask
@@ -67,7 +69,7 @@ taken from *WINDOW-DEFAULTS* first."
                                    :unsigned-char 0)))
                  ;; We release the window ourselves in CLOSE-WINDOW.
                  (send window "setReleasedWhenClosed:" :bool nil :void)
-                 (attach-delegate window)
+                 (setf object (attach-delegate window))
                  (when on-event (setf (window-event-handler window) on-event))
                  (when on-close-request (setf (window-close-request-handler window) on-close-request))
                  (send window "setTitle:" :pointer (ns-string title) :void)
@@ -85,7 +87,7 @@ taken from *WINDOW-DEFAULTS* first."
                  (when center (send window "center" :void))
                  (when visible
                    (send window "makeKeyAndOrderFront:" :pointer (cffi:null-pointer) :void))
-                 window)))))
+                 object)))))
       (when (and visible activate)
         (activate-application))
       window)))
@@ -95,10 +97,10 @@ taken from *WINDOW-DEFAULTS* first."
 window twice does nothing the second time."
   (on-main
    (lambda ()
-     (let ((record (window-record window)))
-       (when record
+     (let ((object (find-window window)))
+       (when object
          ;; Closing tells the handler :CLOSED before the delegate goes.
-         (unless (window-record-closed record)
+         (unless (%window-closed object)
            (send window "close" :void))
          (detach-delegate window)
          (release window)))))
