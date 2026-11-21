@@ -186,6 +186,27 @@
                (load-html other "<p>second</p>")
                (prog1 (wait-until (lambda () (equal "added" (eval-js other "window.later || ''"))))
                  (destroy-webview other))))
+      (check "answering a request twice is reported, and only the first answer is sent"
+             (let* ((seen nil)
+                    (old *error-reporter*)
+                    (other (make-webview
+                            window
+                            :protocols (list (list "twice"
+                                                   (lambda (request responder)
+                                                     (declare (ignore request))
+                                                     (respond responder "<title>first</title>")
+                                                     (respond responder "<title>second</title>"))
+                                                   :async t)))))
+               (setf *error-reporter* (lambda (where c) (declare (ignore where)) (setf seen c)))
+               (unwind-protect
+                    (progn (load-url other "twice://x/")
+                           (prog1 (and (wait-until (lambda () (equal "first" (eval-js other "document.title"))))
+                                       (wait-until (lambda () seen))
+                                       (search "already answered" (princ-to-string seen)))
+                             (destroy-webview other)))
+                 (setf *error-reporter* old))))
+      (check "no request is left open"
+             (wait-until (lambda () (zerop (on-main (lambda () (hash-table-count cl-iris/webview::*open-tasks*)))))))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"
              (handler-case (progn (make-webview window :protocols (list (list "https" #'serve))) nil)
                (error (e) (search "itself" (princ-to-string e)))))
