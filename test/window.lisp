@@ -212,6 +212,7 @@ AppKit animates."
            (not (window-decorated-p window)))
     (close-window window))
   (screen-checks)
+  (application-checks)
   (window-event-checks)
   (timer-checks)
   (default-menu-checks)
@@ -360,6 +361,18 @@ replaces it."
     (check "replacing the menu bar forgets the old Lisp actions"
            (progn (set-menu-bar '((:menu "App")))
                   (zerop (on-main (lambda () (hash-table-count cl-iris/window::*menu-actions*))))))))
+
+(defun application-checks ()
+  (check "the Dock icon can carry a badge"
+         (progn (setf (dock-badge) "3")
+                (prog1 (equal "3" (dock-badge))
+                  (setf (dock-badge) nil))))
+  (check "a cleared badge reads back as NIL"
+         (null (dock-badge)))
+  (check "asking for attention gives a request that can be cancelled"
+         (let ((request (request-user-attention)))
+           (and (or (null request) (integerp request))
+                (progn (when request (cancel-user-attention request)) t)))))
 
 (defun screen-checks ()
   (let ((screens (screens)))

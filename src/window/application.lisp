@@ -97,3 +97,33 @@ the loop is not running."
                             :long 0)
              :bool t
              :void)))))
+
+;;; The Dock
+
+(defun dock-badge ()
+  "The text on the application's Dock icon, or NIL."
+  (on-main (lambda ()
+             (let ((label (send (send (app) "dockTile") "badgeLabel")))
+               (unless (cffi:null-pointer-p label) (lisp-string label))))))
+
+(defun (setf dock-badge) (text)
+  "Show TEXT (a short string, such as a count) on the Dock icon; NIL clears it."
+  (on-main (lambda ()
+             (send (send (app) "dockTile") "setBadgeLabel:"
+                   :pointer (if text (ns-string text) (cffi:null-pointer)) :void)))
+  text)
+
+(defun request-user-attention (&key critical)
+  "Bounce the Dock icon while the application is inactive: once, or until
+the user activates it with CRITICAL. Returns a request for
+CANCEL-USER-ATTENTION; NIL when the application is active, since there is
+nothing to ask for."
+  (let ((request (on-main (lambda ()
+                            ;; NSCriticalRequest 0, NSInformationalRequest 10.
+                            (send (app) "requestUserAttention:"
+                                  :unsigned-long (if critical 0 10) :long)))))
+    (and (plusp request) request)))
+
+(defun cancel-user-attention (request)
+  (on-main (lambda () (send (app) "cancelUserAttentionRequest:" :long request :void)))
+  nil)

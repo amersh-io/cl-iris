@@ -70,6 +70,9 @@
            #:cancel-timer
            #:timer-cancelled-p
            #:quit-application
+           #:dock-badge
+           #:request-user-attention
+           #:cancel-user-attention
            #:set-menu-bar
            #:find-menu-item
            #:menu-item-enabled-p
