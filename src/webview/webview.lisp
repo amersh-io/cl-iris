@@ -35,6 +35,9 @@ Inspector can inspect the webview. With NAVIGATION-GESTURES, swipes go back
 and forward. With VISIBLE NIL, the webview starts hidden. With TRANSPARENT,
 it draws no background, so a transparent page shows what is behind it.
 
+With AUTOPLAY, media plays without waiting for a user gesture; with AUTOPLAY
+NIL, all media waits for one.
+
 INIT-SCRIPTS run at the start of every document, before the page's own
 scripts: each is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T).
 

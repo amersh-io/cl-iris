@@ -38,7 +38,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_visible` | `:visible` | done | "a webview can start hidden and keep running its page" |
 | `with_focused` | `:focused` | planned | |
 | `with_bounds` | `:bounds` (child webview inside a window) | planned | |
-| `with_autoplay` | `:autoplay` | planned | |
+| `with_autoplay` | `:autoplay` | done | "autoplay lets media start without a gesture" |
 | `with_incognito` | `:incognito` (non-persistent data store) | planned | |
 | `with_javascript_disabled` | `:javascript nil` | planned | |
 | `with_back_forward_navigation_gestures` | `:navigation-gestures`, `(setf webview-navigation-gestures-p)` | done | "navigation gestures can be switched on and off" |

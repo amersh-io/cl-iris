@@ -316,6 +316,14 @@
         (destroy-webview other))
       (check "webviews are opaque by default"
              (not (webview-transparent-p webview)))
+      (let ((playing (make-webview window :autoplay t))
+            (waiting (make-webview window :autoplay nil)))
+        (check "autoplay lets media start without a gesture"
+               (webview-autoplay-p playing))
+        (check "without autoplay, media waits for a gesture"
+               (not (webview-autoplay-p waiting)))
+        (destroy-webview playing)
+        (destroy-webview waiting))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

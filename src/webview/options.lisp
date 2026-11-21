@@ -3,11 +3,49 @@
 
 (in-package #:cl-iris/webview)
 
+(defvar *configuration-options* '()
+  "(KEYWORD . SETTER) for each configuration-level option; SETTER takes the
+WKWebViewConfiguration and the value, on the main thread.")
+
+(defmacro define-configuration-option (keyword (configuration value) &body body)
+  "Define the configuration-level MAKE-WEBVIEW option KEYWORD, set by BODY
+before the webview is made."
+  `(progn
+     (setf *configuration-options*
+           (append (remove ,keyword *configuration-options* :key #'car)
+                   (list (cons ,keyword (lambda (,configuration ,value) ,@body)))))
+     ,keyword))
+
 (defun configure (configuration options)
   "Apply the configuration-level OPTIONS (a MAKE-WEBVIEW plist) to
 CONFIGURATION, before the webview is made from it. Main thread only."
-  (declare (ignorable configuration options))
+  (loop for (keyword . setter) in *configuration-options*
+        for value = (getf options keyword '%absent)
+        unless (eq value '%absent)
+          do (funcall setter configuration value))
   configuration)
+
+(defun configuration (webview)
+  "WEBVIEW's configuration (a copy: changing it does not change WEBVIEW)."
+  (send webview "configuration"))
+
+;;; Media
+
+(defconstant +media-types-none+ 0)
+(defconstant +media-types-all+ (1- (expt 2 64)))
+
+(define-configuration-option :autoplay (configuration autoplay)
+  (send configuration "setMediaTypesRequiringUserActionForPlayback:"
+        :unsigned-long (if autoplay +media-types-none+ +media-types-all+)
+        :void))
+
+(defun webview-autoplay-p (webview)
+  "True if WEBVIEW plays audio and video without waiting for a user gesture."
+  (on-main
+   (lambda ()
+     (= +media-types-none+
+        (send (configuration webview) "mediaTypesRequiringUserActionForPlayback"
+              :unsigned-long)))))
 
 ;;; View-level settings are kept in *VIEW-OPTIONS*: each knows how to set
 ;;; itself on a webview, and MAKE-WEBVIEW applies those it is given.
