@@ -444,6 +444,17 @@ replaces it."
                     (= (window-scale-factor window) (getf screen :scale-factor)))))
       (close-window window))))
 
+(defun package-checks ()
+  (check "the cl-iris package exports the window and webview layers' symbols"
+         (every (lambda (symbol)
+                  (multiple-value-bind (found status)
+                      (find-symbol (symbol-name symbol) "CL-IRIS")
+                    (and (eq found symbol) (eq status :external))))
+                (list 'make-window 'with-application 'window-size
+                      'make-webview 'eval-js 'with-webview)))
+  (check "the cl-iris package leaves the Objective-C layer out"
+         (not (eq :external (nth-value 1 (find-symbol "SEND" "CL-IRIS"))))))
+
 (defun macro-checks ()
   (let ((kept nil))
     (with-window (window :title "with-window" :activate nil)

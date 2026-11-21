@@ -6,6 +6,8 @@
   :version "0.0.1"
   :homepage "https://github.com/amersh-io/cl-iris"
   :depends-on ("cl-iris/objc" "cl-iris/window" "cl-iris/webview")
+  :pathname "src/"
+  :components ((:file "cl-iris"))
   :in-order-to ((test-op (test-op "cl-iris/test"))))
 
 (defsystem "cl-iris/objc"
@@ -74,7 +76,7 @@
 
 (defsystem "cl-iris/test"
   :license "Apache-2.0"
-  :depends-on ("cl-iris/objc" "cl-iris/window" "cl-iris/webview")
+  :depends-on ("cl-iris")
   :pathname "test/"
   :serial t
   :components ((:file "package")
