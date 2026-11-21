@@ -38,6 +38,11 @@
           (error (e) (format t \"~&EXAMPLE-ERROR ~A~%\" e)))
      (cl-iris:stop-application))))")
 
+(defun last-lines (text count)
+  "The last COUNT lines of TEXT."
+  (let ((lines (uiop:split-string (string-right-trim '(#\Newline) text) :separator '(#\Newline))))
+    (format nil "~{~A~^~%~}" (last lines count))))
+
 (defun run-example (name probe)
   (let ((file (namestring (merge-pathnames (format nil "examples/~A.lisp" name)
                                            (asdf:system-source-directory "cl-iris")))))
@@ -59,12 +64,17 @@
              (multiple-value-bind (output code)
                  (run-example name (list script expected))
                (check (format nil "the ~A example opens its windows and pages" name)
-                      (and (eql 0 code)
-                           (search "EXAMPLE-DONE" output)
-                           (not (search "EXAMPLE-ERROR" output))
-                           (not (search ";; cl-iris: error" output))
-                           (search (if script "EXAMPLE-TITLES" (format nil "EXAMPLE-TITLES ~A" expected))
-                                   output)))
+                      (or (and (eql 0 code)
+                               (search "EXAMPLE-DONE" output)
+                               (not (search "EXAMPLE-ERROR" output))
+                               (not (search ";; cl-iris: error" output))
+                               (search (if script "EXAMPLE-TITLES" (format nil "EXAMPLE-TITLES ~A" expected))
+                                       output))
+                          ;; Show what the child said, so a failure elsewhere
+                          ;; (CI) can be read from the log.
+                          (progn (format t "~&;; ~A example, exit code ~A, output:~%~A~%"
+                                         name code (last-lines output 40))
+                                 nil)))
                (when script
                  (check (format nil "the ~A example answers its probe" name)
                         (search expected (or (subseq output (or (search "EXAMPLE-PROBED" output) 0))
