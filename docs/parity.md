@@ -61,7 +61,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `url` | `webview-url` | done | "webview-url tells where a webview is" |
 | `reload`, `go_back`, `go_forward` | `reload`, `go-back`, `go-forward` | done | "going back and forward moves through history", "reload loads the page again" |
 | `can_go_back`, `can_go_forward` | `can-go-back-p`, `can-go-forward-p` | done | "a fresh webview cannot go back or forward" |
-| `zoom` | `(setf webview-zoom)` | planned | |
+| `zoom` | `:zoom`, `(setf webview-zoom)` | done | "zoom scales the page's CSS pixels" |
 | `set_background_color` | `(setf webview-background-color)` | done | "the background color can change on a live webview" |
 | `bounds`, `set_bounds` | `webview-bounds`, `(setf webview-bounds)` | done | "a webview can be moved and resized" |
 | `set_visible` | `(setf webview-visible-p)` | done | "a hidden webview can be shown" |

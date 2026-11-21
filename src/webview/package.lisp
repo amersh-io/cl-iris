@@ -33,6 +33,7 @@
            #:focus-webview
            #:webview-focused-p
            #:focus-parent
+           #:webview-zoom
            #:eval-js
            #:javascript-error
            #:request

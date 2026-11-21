@@ -570,6 +570,20 @@ small page; return the port."
       (check "webview-url is NIL before anything loads"
              (let ((other (make-webview window)))
                (prog1 (null (webview-url other)) (destroy-webview other))))
+      (let ((other (make-webview window :zoom 2 :html "<title>zoom</title>")))
+        (check "zoom scales the page's CSS pixels"
+               (and (wait-until (lambda () (equal "zoom" (eval-js other "document.title"))))
+                    (= 2 (webview-zoom other))
+                    (multiple-value-bind (width) (window-content-size window)
+                      (eql (round width 2) (eval-js other "window.innerWidth")))))
+        (check "zoom can change on a live webview"
+               (progn (setf (webview-zoom other) 1)
+                      (multiple-value-bind (width) (window-content-size window)
+                        (wait-until (lambda () (eql (round width) (eval-js other "window.innerWidth")))))))
+        (check "a zoom that is not a positive number is refused"
+               (handler-case (progn (setf (webview-zoom other) 0) nil)
+                 (error () t)))
+        (destroy-webview other))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

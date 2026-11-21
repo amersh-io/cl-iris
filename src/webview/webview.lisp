@@ -116,7 +116,7 @@ ON-TITLE-CHANGE is called with the document's title whenever it changes.
 ON-WEB-PROCESS-TERMINATED is called with the webview when WebKit's content
 process for it dies; without it, the page is reloaded.
 
-With FOCUSED, it takes the keyboard focus. With ACCEPT-FIRST-MOUSE, a click on the webview of an
+With FOCUSED, it takes the keyboard focus. ZOOM scales the page (1 is 100%). With ACCEPT-FIRST-MOUSE, a click on the webview of an
 inactive window reaches the page as well as activating the window.
 BACKGROUND-THROTTLING is :SUSPEND, :THROTTLE or :NONE: what happens to the
 page while it is not visible (macOS 14 and later). PROXY, (:HTTP host port)

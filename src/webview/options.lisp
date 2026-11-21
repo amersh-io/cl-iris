@@ -280,3 +280,20 @@ it shows where the page paints nothing, and use COLOR -- \"#rrggbb\",
 (define-view-option :background-color (webview color)
   (when color
     (set-background-color webview color)))
+
+;;; Zoom (macOS 11 and later): pageZoom scales the page's CSS pixels, as the
+;;; browser's zoom does, rather than magnifying the rendered page.
+
+(defun webview-zoom (webview)
+  "WEBVIEW's page zoom: 1 is 100%."
+  (on-main (lambda () (send webview "pageZoom" :double))))
+
+(defun (setf webview-zoom) (zoom webview)
+  "Zoom WEBVIEW's page to ZOOM, a positive number (1 is 100%)."
+  (unless (and (realp zoom) (plusp zoom))
+    (error "A zoom is a positive number, not ~S." zoom))
+  (on-main (lambda () (send webview "setPageZoom:" :double (float zoom 1d0) :void)))
+  zoom)
+
+(define-view-option :zoom (webview zoom)
+  (send webview "setPageZoom:" :double (float zoom 1d0) :void))
