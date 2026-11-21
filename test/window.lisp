@@ -455,6 +455,24 @@ replaces it."
   (check "the cl-iris package leaves the Objective-C layer out"
          (not (eq :external (nth-value 1 (find-symbol "SEND" "CL-IRIS"))))))
 
+(defun documented-p (symbol)
+  "True if SYMBOL has a docstring for something it names."
+  (or (and (fboundp symbol) (documentation symbol 'function))
+      (and (fboundp `(setf ,symbol)) (documentation `(setf ,symbol) 'function))
+      (and (boundp symbol) (documentation symbol 'variable))
+      (documentation symbol 'type)
+      (documentation symbol 'structure)))
+
+(defun documentation-checks ()
+  (dolist (package '("CL-IRIS/OBJC" "CL-IRIS/WINDOW" "CL-IRIS/WEBVIEW" "CL-IRIS"))
+    (let ((missing '()))
+      (do-external-symbols (symbol package)
+        (unless (documented-p symbol)
+          (push symbol missing)))
+      (check (format nil "every external symbol of ~A has a docstring~@[ (missing: ~{~(~A~)~^ ~})~]"
+                     package (sort missing #'string<))
+             (null missing)))))
+
 (defun macro-checks ()
   (let ((kept nil))
     (with-window (window :title "with-window" :activate nil)

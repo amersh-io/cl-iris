@@ -129,6 +129,7 @@ nothing to ask for."
     (and (plusp request) request)))
 
 (defun cancel-user-attention (request)
+  "Stop the Dock bouncing for REQUEST, a value REQUEST-USER-ATTENTION returned."
   (on-main (lambda () (send (app) "cancelUserAttentionRequest:" :long request :void)))
   nil)
 
@@ -143,4 +144,5 @@ nothing to ask for."
   nil)
 
 (defun application-hidden-p ()
+  "True while the application is hidden (Cmd+H or HIDE-APPLICATION)."
   (on-main (lambda () (send (app) "isHidden" :bool))))

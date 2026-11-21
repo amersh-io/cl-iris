@@ -7,6 +7,9 @@
 
 (in-package #:cl-iris/objc)
 
+(defgeneric objc-object-pointer (object)
+  (:documentation "The Objective-C object (an id) the OBJC-OBJECT OBJECT stands for."))
+
 (defclass objc-object ()
   ((pointer :initarg :pointer
             :reader objc-object-pointer

@@ -10,6 +10,7 @@
   (saved-image-tests)
   (main-thread-wait-checks)
   (package-checks)
+  (documentation-checks)
   (with-application-checks)
   (application-tests (list #'window-checks #'live-redefinition-checks #'webview-checks)
                      :timeout 300)

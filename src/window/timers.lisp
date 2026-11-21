@@ -64,4 +64,5 @@ including from inside the function."
   nil)
 
 (defun timer-cancelled-p (timer)
+  "True once CANCEL-TIMER has stopped TIMER."
   (timer-cancelled timer))

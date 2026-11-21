@@ -15,6 +15,9 @@
 ;;; callback, which gets the WKWebView, finds the Lisp object and its
 ;;; handlers. Main thread only.
 
+(defgeneric webview-window (webview)
+  (:documentation "The WINDOW WEBVIEW was made in."))
+
 (defclass webview (objc-object)
   ((options :initarg :options :accessor webview-options
             :documentation "MAKE-WEBVIEW's options, with :DELEGATE added.")

@@ -30,6 +30,8 @@ NIL once CLOSE-WINDOW has released it."
 
 (define-condition window-closed (error)
   ((window :initarg :window :reader window-closed-window))
+  (:documentation "A window released by CLOSE-WINDOW was used again; WINDOW-CLOSED-WINDOW
+is the window.")
   (:report "The window has been closed with CLOSE-WINDOW and can no longer be used."))
 
 (defun on-window (window function)

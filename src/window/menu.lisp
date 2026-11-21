@@ -163,6 +163,7 @@ thread."
   enabled)
 
 (defun menu-item-checked-p (item)
+  "True if the menu ITEM shows a check mark. SETF it to change that."
   (on-main (lambda () (= 1 (send item "state" :long)))))
 
 (defun (setf menu-item-checked-p) (checked item)

@@ -39,13 +39,16 @@
   (:documentation "The root of the errors about running work on the main thread."))
 
 (define-condition application-not-running (main-thread-error) ()
+  (:documentation "Waiting on the main thread while no application loop runs.")
   (:report "The application loop is not running, so the main thread cannot run the work."))
 
 (define-condition application-stopped (main-thread-error) ()
+  (:documentation "The application loop ended before waited-for work ran.")
   (:report "The application loop stopped before the work on the main thread finished."))
 
 (define-condition main-thread-timeout (main-thread-error)
   ((seconds :initarg :seconds :reader main-thread-timeout-seconds))
+  (:documentation "Work waited for on the main thread took longer than its :TIMEOUT.")
   (:report (lambda (c s)
              (format s "The main thread did not finish the work within ~A seconds."
                      (main-thread-timeout-seconds c)))))

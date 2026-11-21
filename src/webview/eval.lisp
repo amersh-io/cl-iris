@@ -8,6 +8,8 @@
 
 (define-condition javascript-error (error)
   ((message :initarg :message :reader javascript-error-message))
+  (:documentation "Script run by EVAL-JS threw, or could not run;
+JAVASCRIPT-ERROR-MESSAGE is WebKit's message.")
   (:report (lambda (c stream)
              (format stream "JavaScript error: ~A" (javascript-error-message c)))))
 

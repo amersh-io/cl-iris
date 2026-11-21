@@ -137,6 +137,7 @@ height). SETF it to change that."
           (if on (adjoin keyword style) (remove keyword style)))))
 
 (defun window-resizable-p (window)
+  "True if the user can resize WINDOW. SETF it to change that."
   (and (member :resizable (window-style window)) t))
 
 (defun (setf window-resizable-p) (resizable window)
@@ -190,6 +191,7 @@ focus."
   nil)
 
 (defun window-visible-p (window)
+  "True if WINDOW is on screen (shown, even when covered or transparent)."
   (on-window window (lambda () (send window "isVisible" :bool))))
 
 (defun activate-application ()
@@ -230,6 +232,7 @@ application and the application is active."
   nil)
 
 (defun window-minimized-p (window)
+  "True if WINDOW is minimized into the Dock."
   (on-window window (lambda () (send window "isMiniaturized" :bool))))
 
 (defun window-maximized-p (window)
