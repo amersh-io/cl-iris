@@ -49,7 +49,8 @@
     (run-every 1 (lambda ()
                    (multiple-value-bind (s m h) (get-decoded-time)
                      (eval-js webview
-                              (format nil "document.getElementById('clock').textContent = '~2,'0D:~2,'0D:~2,'0D'"
+                              ;; The first tick can come before the page has loaded.
+                              (format nil "(document.getElementById('clock') || {}).textContent = '~2,'0D:~2,'0D:~2,'0D'"
                                       h m s)
                               :wait nil))))))
 
