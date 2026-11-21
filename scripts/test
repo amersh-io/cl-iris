@@ -1,6 +1,8 @@
 #!/bin/sh
 # Run the test suite with the toolchain installed by scripts/bootstrap.
-# Exits non-zero when a test fails.
+# Exits non-zero when a test fails. CL_IRIS_TEST_ONLY=<text> runs only the
+# checks whose names contain <text>; CL_IRIS_TEST_VISIBLE=1 shows the test
+# windows, which are otherwise kept transparent.
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)

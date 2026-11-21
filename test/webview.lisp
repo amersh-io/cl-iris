@@ -154,7 +154,8 @@ proxy -- with what RESPOND returns for its request line; return the port."
                  (setf kept other))
                (and kept (null (find-webview kept)))))
       (check "eval-js returns strings"
-             (equal "iris" (eval-js webview "document.title")))
+             ;; Waits for the page itself, in case the check above was skipped.
+             (wait-until (lambda () (equal "iris" (eval-js webview "document.title")))))
       (check "eval-js returns numbers"
              (eql 42 (eval-js webview "1 + 41")))
       (check "eval-js returns objects as hash tables"
