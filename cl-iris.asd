@@ -47,7 +47,8 @@
                (:file "events")
                (:file "attributes")
                (:file "window")
-               (:file "screens")))
+               (:file "screens")
+               (:file "macros")))
 
 (defsystem "cl-iris/webview"
   :description "WKWebView with JavaScript <-> Lisp messaging and custom URL schemes."

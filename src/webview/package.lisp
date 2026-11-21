@@ -13,6 +13,7 @@
            #:find-webview
            #:webviews
            #:make-webview
+           #:with-webview
            #:destroy-webview
            #:load-url
            #:load-html

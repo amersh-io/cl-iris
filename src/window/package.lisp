@@ -17,6 +17,10 @@
            #:application-running-p
            #:with-cocoa-float-traps
            #:run-application
+           #:call-with-application
+           #:with-application
+           #:with-window
+           #:with-main-thread
            #:stop-application
            #:window
            #:window-pointer

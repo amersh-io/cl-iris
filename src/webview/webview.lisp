@@ -309,3 +309,10 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
      (send webview "removeFromSuperview" :void)
      (release webview)))
   nil)
+
+(defmacro with-webview ((var window &rest options) &body body)
+  "Bind VAR to a webview made in WINDOW with MAKE-WEBVIEW and OPTIONS, run
+BODY, and destroy the webview however BODY exits."
+  `(let ((,var (make-webview ,window ,@options)))
+     (unwind-protect (progn ,@body)
+       (destroy-webview ,var))))

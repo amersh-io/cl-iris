@@ -227,6 +227,7 @@ AppKit animates."
   (application-checks)
   (theme-checks)
   (window-event-checks)
+  (macro-checks)
   (timer-checks)
   (default-menu-checks)
   (menu-checks)
@@ -442,6 +443,50 @@ replaces it."
                (and screen
                     (= (window-scale-factor window) (getf screen :scale-factor)))))
       (close-window window))))
+
+(defun macro-checks ()
+  (let ((kept nil))
+    (with-window (window :title "with-window" :activate nil)
+      (setf kept window)
+      (check "with-window binds an open window"
+             (not (window-closed-p window))))
+    (check "with-window closes its window on the way out"
+           (window-closed-p kept)))
+  (let ((kept nil))
+    (ignore-errors
+     (with-window (window :title "unwound" :activate nil)
+       (setf kept window)
+       (error "leaving")))
+    (check "with-window closes its window when the body signals"
+           (and kept (window-closed-p kept))))
+  (check "with-main-thread runs its body on the main thread and returns its values"
+         (equal '(t 2) (multiple-value-list (with-main-thread () (values (main-thread-p) 2)))))
+  (check "with-main-thread :wait nil queues the body"
+         (let ((ran nil))
+           (with-main-thread (:wait nil) (setf ran t))
+           (with-main-thread ())
+           ran)))
+
+(defun with-application-checks ()
+  "WITH-APPLICATION owns the main thread, so it is checked in a child Lisp."
+  (multiple-value-bind (output code)
+      (run-child-lisp "(asdf:load-system \"cl-iris/window\")"
+                      "(in-package :cl-iris/window)"
+                      "(format t \"~&VALUES ~S~%\"
+                         (multiple-value-list
+                          (with-application (:activation-policy :accessory)
+                            (values (main-thread-p) (application-running-p)))))"
+                      "(format t \"~&CAUGHT ~A~%\"
+                         (handler-case (with-application (:activation-policy :accessory)
+                                         (error \"from the body\"))
+                           (error (e) e)))"
+                      "(format t \"~&RUNNING ~S~%\" (application-running-p))")
+    (check "with-application runs its body off the main thread while the loop runs"
+           (and (eql 0 code) (search "VALUES (NIL T)" output)))
+    (check "with-application signals the body's error in the caller"
+           (search "CAUGHT from the body" output))
+    (check "with-application stops the loop when the body is done"
+           (search "RUNNING NIL" output))))
 
 (defun window-event-checks ()
   (let* ((events '())

@@ -9,6 +9,7 @@
   (exception-tests)
   (saved-image-tests)
   (main-thread-wait-checks)
+  (with-application-checks)
   (application-tests (list #'window-checks #'live-redefinition-checks #'webview-checks)
                      :timeout 300)
   (when *failures*
