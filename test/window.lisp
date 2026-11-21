@@ -192,6 +192,7 @@ AppKit animates."
            (not (window-decorated-p window)))
     (close-window window))
   (window-event-checks)
+  (timer-checks)
   (let ((window (make-window :title "minimize and zoom" :width 300 :height 200 :activate nil)))
     (check "a window can be minimized and restored"
            (progn (minimize-window window)
@@ -215,6 +216,54 @@ AppKit animates."
   (check "an unknown style keyword is refused"
          (handler-case (progn (make-window :style '(:wobbly) :activate nil) nil)
            (error (e) (search "WOBBLY" (princ-to-string e))))))
+
+(defun timer-checks ()
+  (let ((before (handle-count)))
+    (check "run-after calls its function once on the main thread, later"
+           (let* ((start (get-internal-real-time))
+                  (fired '()))
+             (run-after 0.2 (lambda () (push (list (main-thread-p) (get-internal-real-time)) fired)))
+             (and (eventually (lambda () fired))
+                  (progn (sleep 0.3) (= 1 (length fired)))
+                  (first (first fired))
+                  (>= (- (second (first fired)) start)
+                      (* 0.15 internal-time-units-per-second)))))
+    (check "a cancelled timer never fires"
+           (let ((fired nil))
+             (cancel-timer (run-after 0.1 (lambda () (setf fired t))))
+             (sleep 0.3)
+             (not fired)))
+    (check "run-every fires repeatedly until cancelled"
+           (let* ((count 0)
+                  (timer (run-every 0.05 (lambda () (incf count)))))
+             (and (eventually (lambda () (>= count 3)))
+                  (progn (cancel-timer timer)
+                         (sleep 0.2)
+                         (let ((after count))
+                           (sleep 0.2)
+                           (= after count))))))
+    (check "a repeating timer can cancel itself"
+           (let* ((count 0) (timer nil))
+             (setf timer (run-every 0.05 (lambda ()
+                                           (when (= 2 (incf count))
+                                             (cancel-timer timer)))))
+             (sleep 0.4)
+             (and (= 2 count) (timer-cancelled-p timer))))
+    (check "an error in a repeating timer is reported and the timer goes on"
+           (let* ((count 0) (reported nil)
+                  (old *error-reporter*))
+             (setf *error-reporter* (lambda (where c) (declare (ignore c)) (setf reported where)))
+             (unwind-protect
+                  (let ((timer (run-every 0.05 (lambda ()
+                                                 (incf count)
+                                                 (error "timer boom")))))
+                    (prog1 (and (eventually (lambda () (>= count 2)))
+                                (equal "a timer" reported))
+                      (cancel-timer timer)
+                      (sleep 0.15)))
+               (setf *error-reporter* old))))
+    (check "finished and cancelled timers leave no handles behind"
+           (eventually (lambda () (= before (handle-count)))))))
 
 (defun window-event-checks ()
   (let* ((events '())

@@ -37,6 +37,7 @@
                (:file "runtime")
                (:file "traps")
                (:file "dispatch")
+               (:file "timers")
                (:file "application")
                (:file "color")
                (:file "attributes")

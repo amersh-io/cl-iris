@@ -58,4 +58,8 @@
            #:window-titlebar-transparent-p
            #:window-event-handler
            #:window-close-request-handler
-           #:window-closed-p))
+           #:window-closed-p
+           #:run-after
+           #:run-every
+           #:cancel-timer
+           #:timer-cancelled-p))
