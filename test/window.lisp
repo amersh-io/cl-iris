@@ -335,15 +335,23 @@ application. Give up and exit the process if it takes more than TIMEOUT seconds.
                      (finish-output)
                      (sb-ext:exit :code 3 :abort t))
                    :name "cl-iris test watchdog")))
-    (run-application
-     ;; Tests run often and must not take focus or add a Dock icon.
-     :activation-policy :accessory
-     :on-launch (lambda ()
-                  (sb-thread:make-thread
-                   (lambda ()
-                     (unwind-protect (mapc #'funcall checks)
-                       (stop-application)))
-                   :name "cl-iris test worker")))
+    (let ((worker nil) (finished nil))
+      (run-application
+       ;; Tests run often and must not take focus or add a Dock icon.
+       :activation-policy :accessory
+       :on-launch (lambda ()
+                    (setf worker
+                          (sb-thread:make-thread
+                           (lambda ()
+                             (unwind-protect (progn (mapc #'funcall checks)
+                                                    (setf finished t))
+                               (stop-application)))
+                           :name "cl-iris test worker"))))
+      ;; The loop must not end under the checks: finish them before going on.
+      (when worker
+        (sb-thread:join-thread worker :default nil))
+      (check "the application loop ran until the checks finished"
+             finished))
     (sb-thread:terminate-thread watchdog)))
 
 (defun main-thread-wait-checks ()
