@@ -50,3 +50,25 @@ reclaimed it): call :ON-WEB-PROCESS-TERMINATED, or reload by default."
     (unless (route webview :on-web-process-terminated)
       (send webview "reload" :pointer))
     handled))
+
+;;; The document title, observed with key-value observing
+
+(defconstant +observe-new+ 1)
+
+(defun observe-title (webview delegate)
+  (send webview "addObserver:forKeyPath:options:context:"
+        :pointer delegate :pointer (ns-string "title")
+        :unsigned-long +observe-new+ :pointer (cffi:null-pointer)
+        :void))
+
+(defun stop-observing-title (webview delegate)
+  "Undo OBSERVE-TITLE. Removing an observer that was never added raises an
+Objective-C exception, so this is called exactly once per OBSERVE-TITLE."
+  (send webview "removeObserver:forKeyPath:"
+        :pointer delegate :pointer (ns-string "title") :void))
+
+(defun observed-change (key-path object)
+  (when (and (string= "title" (lisp-string key-path))
+             (gethash (cffi:pointer-address object) *routes*))
+    (call-handler object :on-title-change "on-title-change"
+                  (objc->lisp (send object "title")))))

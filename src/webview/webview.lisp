@@ -104,6 +104,7 @@ ON-NAVIGATE is called with the URL of each navigation before it happens,
 including the first load and links; it returns true to let it proceed.
 ON-PAGE-LOAD is called with :STARTED or :FINISHED and the URL as a page
 loads, or with :FAILED, the URL and an error message.
+ON-TITLE-CHANGE is called with the document's title whenever it changes.
 ON-WEB-PROCESS-TERMINATED is called with the webview when WebKit's content
 process for it dies; without it, the page is reloaded.
 
@@ -208,10 +209,14 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
       ;; The user content controller keeps the delegate alive; the webview
       ;; refers to it weakly, and DESTROY-WEBVIEW detaches it.
       (send webview "setNavigationDelegate:" :pointer delegate :void)
+      (observe-title webview delegate)
       ;; The configuration and its user content controller retain what they need.
       (release configuration)
-      (release delegate)
-      (setf (gethash (cffi:pointer-address webview) *routes*) options)
+      ;; Our own reference to the delegate stays until DESTROY-WEBVIEW: the
+      ;; webview holds it only weakly, and the title observation must outlive
+      ;; the handlers that otherwise keep it.
+      (setf (gethash (cffi:pointer-address webview) *routes*)
+            (list* :delegate delegate options))
       (apply-view-options webview options)
       (cond (bounds
              ;; Keep the same distance from the top as the window resizes.
@@ -263,7 +268,11 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
   "Detach WEBVIEW from its window and release it."
   (on-main
    (lambda ()
-     (remhash (cffi:pointer-address webview) *routes*)
+     (let ((delegate (route webview :delegate)))
+       (stop-observing-title webview delegate)
+       (send webview "setNavigationDelegate:" :pointer (cffi:null-pointer) :void)
+       (remhash (cffi:pointer-address webview) *routes*)
+       (release delegate))
      (let ((controller (send (send webview "configuration") "userContentController")))
        (send controller "removeScriptMessageHandlerForName:"
              :pointer (ns-string *message-handler-name*) :void)
@@ -271,7 +280,6 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
              :pointer (ns-string *invoke-handler-name*)
              :pointer (send (find-class* "WKContentWorld") "pageWorld")
              :void))
-     (send webview "setNavigationDelegate:" :pointer (cffi:null-pointer) :void)
      (send webview "removeFromSuperview" :void)
      (release webview)))
   nil)

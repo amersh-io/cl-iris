@@ -520,6 +520,16 @@ small page; return the port."
                                            (and (equal "iris" (eval-js other "document.title"))
                                                 (eq :null (eval-js other "window.marker ?? null")))))))
             (destroy-webview other))))
+      (let* ((titles '())
+             (other (make-webview window
+                                  :html "<title>one</title>"
+                                  :on-title-change (lambda (title) (push title titles)))))
+        (check "on-title-change hears the title of a new page"
+               (wait-until (lambda () (member "one" titles :test #'equal))))
+        (check "on-title-change hears a script change the title"
+               (progn (eval-js other "document.title = 'two'; 0")
+                      (wait-until (lambda () (equal "two" (first titles))))))
+        (destroy-webview other))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

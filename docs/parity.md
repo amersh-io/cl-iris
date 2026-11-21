@@ -27,7 +27,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_navigation_handler` | `:on-navigate` (allow or deny) | done | "on-navigate lets a navigation through", "on-navigate can refuse a navigation" |
 | `with_new_window_req_handler` | `:on-new-window` | planned | |
 | `with_on_page_load_handler` | `:on-page-load` (started, finished, failed) | done | "on-page-load hears a page start and finish", "on-page-load hears a load fail" |
-| `with_document_title_changed_handler` | `:on-title-change` | planned | |
+| `with_document_title_changed_handler` | `:on-title-change` | done | "on-title-change hears a script change the title" |
 | `with_drag_drop_handler` | `:on-drag-drop` | planned | |
 | `with_download_started_handler`, `with_download_completed_handler` | `:on-download` | planned | |
 | `with_permission_handler` | `:on-permission` (camera, microphone) | planned | |
