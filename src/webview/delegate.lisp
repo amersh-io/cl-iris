@@ -5,14 +5,6 @@
 ;;; The delegate class: one instance per webview answers both script messages
 ;;; and requests for the custom scheme.
 
-(cffi:defcallback did-receive-script-message :void
-    ((self :pointer) (cmd :pointer) (controller :pointer) (message :pointer))
-  (declare (ignore self cmd controller))
-  (let ((handler (route (send message "webView") :on-message)))
-    (when handler
-      (handler-case (funcall handler (objc->lisp (send message "body")))
-        (serious-condition (c) (report-error "on-message" c))))))
-
 (defun ns-data (octets)
   (let ((octets (coerce octets '(simple-array (unsigned-byte 8) (*)))))
     (cffi:with-pointer-to-vector-data (bytes octets)
@@ -38,9 +30,7 @@
       (sb-ext:string-to-octets body :external-format :utf-8)
       body))
 
-(cffi:defcallback start-url-scheme-task :void
-    ((self :pointer) (cmd :pointer) (webview :pointer) (task :pointer))
-  (declare (ignore self cmd))
+(defun start-task (webview task)
   (let ((url (lisp-string (send (send (send task "request") "URL") "absoluteString")))
         (handler (route webview :on-request)))
     (multiple-value-bind (body content-type)
@@ -56,20 +46,27 @@
              (respond task 200 (or content-type "text/html; charset=utf-8")
                       (to-octets body)))))))
 
-(cffi:defcallback stop-url-scheme-task :void
-    ((self :pointer) (cmd :pointer) (webview :pointer) (task :pointer))
-  (declare (ignore self cmd webview task)))
+(defun receive-message (message)
+  (let ((handler (route (send message "webView") :on-message)))
+    (when handler
+      (handler-case (funcall handler (objc->lisp (send message "body")))
+        (serious-condition (c) (report-error "on-message" c))))))
+
+;;; WebKit does not check conformance to these protocols, and does not always
+;;; register them with the runtime; DEFINE-OBJC-CLASS skips missing ones.
+
+(define-objc-class "CLIrisWebViewDelegate"
+    (:protocols ("WKScriptMessageHandler" "WKURLSchemeHandler"))
+  (:method "userContentController:didReceiveScriptMessage:" :void
+      (self (controller :pointer) (message :pointer))
+    (declare (ignore controller))
+    (receive-message message))
+  (:method "webView:startURLSchemeTask:" :void
+      (self (webview :pointer) (task :pointer))
+    (start-task webview task))
+  (:method "webView:stopURLSchemeTask:" :void
+      (self (webview :pointer) (task :pointer))
+    (declare (ignore webview task))))
 
 (defun delegate-class ()
-  (let ((class (ensure-class "CLIrisWebViewDelegate" "NSObject")))
-    ;; WebKit does not check conformance, and does not always register
-    ;; these protocols with the runtime.
-    (add-protocol class "WKScriptMessageHandler" :errorp nil)
-    (add-protocol class "WKURLSchemeHandler" :errorp nil)
-    (set-method class "userContentController:didReceiveScriptMessage:"
-                (cffi:callback did-receive-script-message) "v@:@@")
-    (set-method class "webView:startURLSchemeTask:"
-                (cffi:callback start-url-scheme-task) "v@:@@")
-    (set-method class "webView:stopURLSchemeTask:"
-                (cffi:callback stop-url-scheme-task) "v@:@@")
-    class))
+  (find-class* "CLIrisWebViewDelegate"))
