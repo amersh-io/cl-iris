@@ -326,3 +326,22 @@ follows the system reports what the system currently uses."
 the title bar's buttons."
   (on-window window (lambda () (send window "setTitlebarAppearsTransparent:" :bool transparent :void)))
   transparent)
+
+;;; Shadow and mouse events
+
+(defun window-shadow-p (window)
+  (on-window window (lambda () (send window "hasShadow" :bool))))
+
+(defun (setf window-shadow-p) (shadow window)
+  "Draw WINDOW with or without the drop shadow around its frame."
+  (on-window window (lambda () (send window "setHasShadow:" :bool shadow :void)))
+  shadow)
+
+(defun window-ignores-mouse-p (window)
+  (on-window window (lambda () (send window "ignoresMouseEvents" :bool))))
+
+(defun (setf window-ignores-mouse-p) (ignore window)
+  "Let clicks and scrolling pass through WINDOW to whatever is behind it,
+as an overlay needs."
+  (on-window window (lambda () (send window "setIgnoresMouseEvents:" :bool ignore :void)))
+  ignore)

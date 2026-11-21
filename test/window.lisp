@@ -148,6 +148,16 @@ AppKit animates."
            (progn (setf (window-transparent-p window) nil)
                   (not (window-transparent-p window))))
     (close-window window))
+  (let ((window (make-window :title "shadow and mouse" :width 200 :height 100 :activate nil)))
+    (check "a window's shadow can be turned off and on"
+           (and (window-shadow-p window)
+                (progn (setf (window-shadow-p window) nil) (not (window-shadow-p window)))
+                (progn (setf (window-shadow-p window) t) (window-shadow-p window))))
+    (check "a window can let mouse events pass through"
+           (and (not (window-ignores-mouse-p window))
+                (progn (setf (window-ignores-mouse-p window) t)
+                       (window-ignores-mouse-p window))))
+    (close-window window))
   (let ((window (make-window :title "appearance" :width 300 :height 200 :activate nil)))
     (check "a window can be drawn dark or light"
            (progn (setf (window-appearance window) :dark)

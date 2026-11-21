@@ -60,6 +60,9 @@
            #:window-close-request-handler
            #:window-closed-p
            #:window-closed
+           #:on-window
+           #:window-shadow-p
+           #:window-ignores-mouse-p
            #:run-after
            #:run-every
            #:cancel-timer
