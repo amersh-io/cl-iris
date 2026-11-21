@@ -58,6 +58,7 @@
                (:file "scheme")
                (:file "ipc")
                (:file "navigation")
+               (:file "ui")
                (:file "delegate")
                (:file "options")
                (:file "webview")

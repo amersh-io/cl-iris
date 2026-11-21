@@ -25,7 +25,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_asynchronous_custom_protocol` | `:protocols` entry with `:async t`, `respond` from any thread | done | "an asynchronous handler answers later from another thread", "an answer to a stopped request is dropped, not sent" |
 | `with_ipc_handler` | `:on-message` (`iris.post`), plus `:on-invoke` (`iris.invoke`, a Promise of the answer — wry has no reply) | done | "iris.post reaches on-message", "iris.invoke resolves with what on-invoke returns", "an asynchronous on-invoke answers later from another thread" |
 | `with_navigation_handler` | `:on-navigate` (allow or deny) | done | "on-navigate lets a navigation through", "on-navigate can refuse a navigation" |
-| `with_new_window_req_handler` | `:on-new-window` | planned | |
+| `with_new_window_req_handler` | `:on-new-window` (`:here`, `:browser` or `nil`) | done | "on-new-window can refuse window.open" |
 | `with_on_page_load_handler` | `:on-page-load` (started, finished, failed) | done | "on-page-load hears a page start and finish", "on-page-load hears a load fail" |
 | `with_document_title_changed_handler` | `:on-title-change` | done | "on-title-change hears a script change the title" |
 | `with_drag_drop_handler` | `:on-drag-drop` | planned | |
@@ -116,7 +116,7 @@ Status: **done** (with the test that covers it), **planned**, or
 |---|---|---|---|
 | Cmd+C / Cmd+V / Cmd+A / undo in the webview | a default Edit menu | done | "the default menu bar has an Edit menu for copy and paste" |
 | `alert`, `confirm`, `prompt` | WKUIDelegate panels | planned | |
-| links with `target=_blank` | routed to `:on-new-window` or opened in place | planned | |
+| links with `target=_blank` | routed to `:on-new-window`, else opened in place | done | "a target=_blank link opens in place by default" |
 | `<input type=file>` | open panel | planned | |
 | web content process crash | `:on-web-process-terminated`, else reload | done | "on-web-process-terminated hears the content process die", "without a handler, a webview whose process died reloads", "an eval-js pending when the process dies ends with an error" |
 | Objective-C exceptions | reported before the process aborts | done | "an uncaught exception is reported with its name and reason" |

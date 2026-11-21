@@ -584,6 +584,25 @@ small page; return the port."
                (handler-case (progn (setf (webview-zoom other) 0) nil)
                  (error () t)))
         (destroy-webview other))
+      (flet ((page (r) (format nil "<title>~A</title><a id=l target=_blank href='blank://two/'>x</a>"
+                               (request-url r))))
+        (let ((other (make-webview window :protocols (list (list "blank" #'page))
+                                          :url "blank://one/")))
+          (check "a target=_blank link opens in place by default"
+                 (and (wait-until (lambda () (equal "blank://one/" (eval-js other "document.title"))))
+                      (progn (eval-js other "document.getElementById('l').click(); 0")
+                             (wait-until (lambda () (equal "blank://two/" (webview-url other)))))))
+          (destroy-webview other))
+        (let* ((asked nil)
+               (other (make-webview window :protocols (list (list "blank" #'page))
+                                           :on-new-window (lambda (url) (setf asked url) nil)
+                                           :url "blank://one/")))
+          (check "on-new-window can refuse window.open"
+                 (and (wait-until (lambda () (equal "blank://one/" (eval-js other "document.title"))))
+                      (progn (eval-js other "window.open('blank://three/'); 0")
+                             (wait-until (lambda () (equal "blank://three/" asked))))
+                      (progn (sleep 0.2) (equal "blank://one/" (webview-url other)))))
+          (destroy-webview other)))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

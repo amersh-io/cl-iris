@@ -10,7 +10,7 @@
 
 (define-objc-class "CLIrisWebViewDelegate"
     (:protocols ("WKScriptMessageHandler" "WKScriptMessageHandlerWithReply"
-                 "WKURLSchemeHandler" "WKNavigationDelegate"))
+                 "WKURLSchemeHandler" "WKNavigationDelegate" "WKUIDelegate"))
   (:method "userContentController:didReceiveScriptMessage:" :void
       (self (controller :pointer) (message :pointer))
     (declare (ignore controller))
@@ -45,6 +45,10 @@
       (self (key-path :pointer) (object :pointer) (change :pointer) (context :pointer))
     (declare (ignore change context))
     (observed-change key-path object))
+  (:method "webView:createWebViewWithConfiguration:forNavigationAction:windowFeatures:" :pointer
+      (self (webview :pointer) (configuration :pointer) (action :pointer) (features :pointer))
+    (declare (ignore configuration features))
+    (new-window-request webview action))
   (:method "webViewWebContentProcessDidTerminate:" :void (self (webview :pointer))
     (web-process-terminated webview))
   (:method "webView:didFailNavigation:withError:" :void

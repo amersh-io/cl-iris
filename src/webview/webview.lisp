@@ -110,6 +110,10 @@ stay in memory, apart from other webviews. With JAVASCRIPT NIL, pages run no
 scripts of their own (EVAL-JS and init scripts still run).
 ON-NAVIGATE is called with the URL of each navigation before it happens,
 including the first load and links; it returns true to let it proceed.
+ON-NEW-WINDOW is called with the URL a page wants to open in a new window
+(window.open, target=_blank) and returns :HERE to load it in this webview,
+:BROWSER to open it in the default browser, or NIL to ignore it; without it,
+such links open here.
 ON-PAGE-LOAD is called with :STARTED or :FINISHED and the URL as a page
 loads, or with :FAILED, the URL and an error message.
 ON-TITLE-CHANGE is called with the document's title whenever it changes.
@@ -217,6 +221,7 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
       ;; The user content controller keeps the delegate alive; the webview
       ;; refers to it weakly, and DESTROY-WEBVIEW detaches it.
       (send webview "setNavigationDelegate:" :pointer delegate :void)
+      (send webview "setUIDelegate:" :pointer delegate :void)
       (observe-title webview delegate)
       ;; The configuration and its user content controller retain what they need.
       (release configuration)
@@ -279,6 +284,7 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
      (let ((delegate (route webview :delegate)))
        (stop-observing-title webview delegate)
        (send webview "setNavigationDelegate:" :pointer (cffi:null-pointer) :void)
+       (send webview "setUIDelegate:" :pointer (cffi:null-pointer) :void)
        (remhash (cffi:pointer-address webview) *routes*)
        (release delegate))
      (let ((controller (send (send webview "configuration") "userContentController")))
