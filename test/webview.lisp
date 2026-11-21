@@ -444,6 +444,15 @@ proxy -- with what RESPOND returns for its request line; return the port."
       (check "an unknown background throttling policy is refused"
              (handler-case (progn (make-webview window :background-throttling :sometimes) nil)
                (error (e) (search "SOMETIMES" (princ-to-string e)))))
+      (check "bad options are refused before anything is made"
+             (flet ((made () (on-main (lambda () (hash-table-count cl-iris/webview::*routes*)))))
+               (let ((before (made)))
+                 (and (every (lambda (options)
+                               (handler-case (progn (apply #'make-webview window options) nil)
+                                 (error () t)))
+                             '((:proxy (:ftp "h" 1)) (:zoom -1) (:bounds (0 0 10))
+                               (:background-color "#zz")))
+                      (= before (made))))))
       (let ((http (make-webview window :incognito t :proxy '(:http "127.0.0.1" 3128)))
             (socks (make-webview window :incognito t :proxy '(:socks5 "127.0.0.1" 1080))))
         (check "an HTTP proxy is set on the webview's store"

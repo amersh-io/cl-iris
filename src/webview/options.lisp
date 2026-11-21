@@ -297,3 +297,31 @@ it shows where the page paints nothing, and use COLOR -- \"#rrggbb\",
 
 (define-view-option :zoom (webview zoom)
   (send webview "setPageZoom:" :double (float zoom 1d0) :void))
+
+;;; Checking options before WebKit sees them, so that a bad one is an error
+;;; in the caller's thread and nothing is half made.
+
+(defun check-options (options)
+  "Signal an error for an option MAKE-WEBVIEW could not apply."
+  (destructuring-bind (&key background-throttling proxy zoom bounds background-color
+                       &allow-other-keys)
+      options
+    (when (and background-throttling
+               (not (assoc background-throttling *scheduling-policies*)))
+      (error "Background throttling is one of ~{~S~^, ~}, not ~S."
+             (mapcar #'car *scheduling-policies*) background-throttling))
+    (when proxy
+      (unless (and (listp proxy) (= 3 (length proxy))
+                   (member (first proxy) '(:http :socks5))
+                   (stringp (second proxy))
+                   (typep (third proxy) '(integer 1 65535)))
+        (error "A proxy is (:HTTP host port) or (:SOCKS5 host port), not ~S." proxy)))
+    (when (and zoom (not (and (realp zoom) (plusp zoom))))
+      (error "A zoom is a positive number, not ~S." zoom))
+    (when (and bounds (not (and (listp bounds) (= 4 (length bounds))
+                                (every #'realp bounds)
+                                (every (lambda (x) (>= x 0)) (cddr bounds)))))
+      (error "Bounds are (x y width height), not ~S." bounds))
+    (when background-color
+      (color-components background-color))
+    options))

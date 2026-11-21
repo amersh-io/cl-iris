@@ -158,6 +158,7 @@ loaded from BASE-URL."
   (declare (ignore on-message))
   (when (and url html)
     (error "Give MAKE-WEBVIEW a URL or HTML, not both."))
+  (check-options options)
   (let* ((protocols (append (when on-request (list (list scheme on-request)))
                             protocols))
          (options (list* :protocols (normalize-protocols protocols)
