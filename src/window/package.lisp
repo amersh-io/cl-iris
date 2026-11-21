@@ -27,4 +27,8 @@
            #:window-frame
            #:window-position
            #:move-window
-           #:center-window))
+           #:center-window
+           #:window-min-size
+           #:set-window-min-size
+           #:window-max-size
+           #:set-window-max-size))

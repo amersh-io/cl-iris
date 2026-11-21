@@ -66,6 +66,11 @@
                                      (values (rect-x frame) (rect-y frame) (rect-width frame)))))
                       (declare (ignore sy))
                       (< (abs (- (+ x 250) (+ sx (/ screen-width 2)))) 2)))))
+    (check "a window keeps the minimum and maximum sizes it is given"
+           (progn (set-window-min-size window 300 200)
+                  (set-window-max-size window 900 700)
+                  (and (equal '(300d0 200d0) (multiple-value-list (window-min-size window)))
+                       (equal '(900d0 700d0) (multiple-value-list (window-max-size window))))))
     (close-window window)))
 
 (defun application-tests (checks &key (timeout 60))

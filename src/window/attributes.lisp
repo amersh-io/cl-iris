@@ -43,3 +43,30 @@ included."
 places new windows."
   (on-main (lambda () (send window "center" :void)))
   nil)
+
+(defun size-values (size)
+  (values (size-width size) (size-height size)))
+
+(defun window-min-size (window)
+  "Return the smallest width and height the user can resize WINDOW's content
+area to."
+  (on-main (lambda () (size-values (send window "contentMinSize" (:struct ns-size))))))
+
+(defun set-window-min-size (window width height)
+  "Keep the user from resizing WINDOW's content area below WIDTH by HEIGHT."
+  (on-main
+   (lambda ()
+     (send window "setContentMinSize:" (:struct ns-size) (make-size width height) :void)))
+  nil)
+
+(defun window-max-size (window)
+  "Return the largest width and height the user can resize WINDOW's content
+area to."
+  (on-main (lambda () (size-values (send window "contentMaxSize" (:struct ns-size))))))
+
+(defun set-window-max-size (window width height)
+  "Keep the user from resizing WINDOW's content area beyond WIDTH by HEIGHT."
+  (on-main
+   (lambda ()
+     (send window "setContentMaxSize:" (:struct ns-size) (make-size width height) :void)))
+  nil)
