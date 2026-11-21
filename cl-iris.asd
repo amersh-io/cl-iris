@@ -56,6 +56,7 @@
   :components ((:file "package")
                (:file "runtime")
                (:file "scheme")
+               (:file "ipc")
                (:file "delegate")
                (:file "webview")
                (:file "eval")))

@@ -23,7 +23,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_initialization_script_for_main_only` | `(source :main-frame-only t)` in `:init-scripts` | done | "a main-frame-only init script skips iframes" |
 | `with_custom_protocol` | `:protocols` (or `:on-request` for one) | done | "fetch reaches the Lisp scheme handler", "one webview answers several schemes", "a request carries its method, headers and body" |
 | `with_asynchronous_custom_protocol` | `:protocols` entry with `:async t`, `respond` from any thread | done | "an asynchronous handler answers later from another thread", "an answer to a stopped request is dropped, not sent" |
-| `with_ipc_handler` | `:on-message` | done | "a message from JavaScript is answered by eval-js" |
+| `with_ipc_handler` | `:on-message` (`iris.post`), plus `:on-invoke` (`iris.invoke`, a Promise of the answer — wry has no reply) | done | "iris.post reaches on-message", "iris.invoke resolves with what on-invoke returns", "an asynchronous on-invoke answers later from another thread" |
 | `with_navigation_handler` | `:on-navigate` (allow or deny) | planned | |
 | `with_new_window_req_handler` | `:on-new-window` | planned | |
 | `with_on_page_load_handler` | `:on-page-load` (started, finished) | planned | |

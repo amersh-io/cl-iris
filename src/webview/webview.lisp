@@ -10,8 +10,15 @@
                      &allow-other-keys)
   "Fill WINDOW with a new WKWebView and return it.
 
-ON-MESSAGE is called on the main thread with each value a page posts to
-window.webkit.messageHandlers.iris, converted with OBJC->LISP.
+ON-MESSAGE is called on the main thread with each value a page posts with
+iris.post(value) (or window.webkit.messageHandlers.iris.postMessage),
+converted with OBJC->LISP.
+
+ON-INVOKE answers iris.invoke(value), which returns a Promise: it is called
+on the main thread with the value and returns the answer, converted with
+LISP->OBJC; an error it signals rejects the Promise with its message. With
+INVOKE-ASYNC, ON-INVOKE is called with the value and a function of
+(ANSWER &key ERROR) to call once, later, from any thread.
 
 PROTOCOLS lists custom URL schemes answered by Lisp, each as
 (SCHEME HANDLER &key ASYNC). HANDLER is called on the main thread with a
@@ -92,6 +99,12 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
     (let ((controller (send configuration "userContentController")))
       (send controller "addScriptMessageHandler:name:"
             :pointer delegate :pointer (ns-string *message-handler-name*) :void)
+      (send controller "addScriptMessageHandlerWithReply:contentWorld:name:"
+            :pointer delegate
+            :pointer (send (find-class* "WKContentWorld") "pageWorld")
+            :pointer (ns-string *invoke-handler-name*)
+            :void)
+      (add-user-script controller *bridge-script*)
       (dolist (script (getf options :init-scripts))
         (add-user-script controller script)))
     (loop for (scheme) in (getf options :protocols)
@@ -152,9 +165,13 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
   (on-main
    (lambda ()
      (remhash (cffi:pointer-address webview) *routes*)
-     (send (send (send webview "configuration") "userContentController")
-           "removeScriptMessageHandlerForName:"
-           :pointer (ns-string *message-handler-name*) :void)
+     (let ((controller (send (send webview "configuration") "userContentController")))
+       (send controller "removeScriptMessageHandlerForName:"
+             :pointer (ns-string *message-handler-name*) :void)
+       (send controller "removeScriptMessageHandlerForName:contentWorld:"
+             :pointer (ns-string *invoke-handler-name*)
+             :pointer (send (find-class* "WKContentWorld") "pageWorld")
+             :void))
      (send webview "removeFromSuperview" :void)
      (release webview)))
   nil)

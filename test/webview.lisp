@@ -219,6 +219,56 @@
                  (setf *error-reporter* old))))
       (check "no request is left open"
              (wait-until (lambda () (zerop (on-main (lambda () (hash-table-count cl-iris/webview::*open-tasks*)))))))
+      (check "iris.post reaches on-message"
+             (progn
+               (eval-js webview "iris.post({kind: 'posted', n: 3}); 0")
+               (wait-until (lambda ()
+                             (sb-thread:with-mutex (lock)
+                               (find-if (lambda (m) (and (hash-table-p m)
+                                                         (equal "posted" (gethash "kind" m))
+                                                         (eql 3 (gethash "n" m))))
+                                        messages))))))
+      (let ((other (make-webview
+                    window
+                    :html "<title>invoke</title>"
+                    :on-invoke (lambda (value)
+                                 (cond ((equal value "boom") (error "kaboom"))
+                                       ((hash-table-p value)
+                                        (let ((answer (make-hash-table :test 'equal)))
+                                          (setf (gethash "sum" answer)
+                                                (reduce #'+ (gethash "numbers" value)))
+                                          answer))
+                                       (t (list value value)))))))
+        (wait-until (lambda () (equal "invoke" (eval-js other "document.title"))))
+        (check "iris.invoke resolves with what on-invoke returns"
+               (progn
+                 (eval-js other "iris.invoke({numbers: [1, 2, 3]}).then(r => window.result = r.sum); 0")
+                 (wait-until (lambda () (eql 6 (eval-js other "window.result || 0"))))))
+        (check "iris.invoke carries lists as arrays"
+               (progn
+                 (eval-js other "iris.invoke('x').then(r => window.pair = r.join('+')); 0")
+                 (wait-until (lambda () (equal "x+x" (eval-js other "window.pair || ''"))))))
+        (check "an error in on-invoke rejects the Promise with its message"
+               (progn
+                 (eval-js other "iris.invoke('boom').catch(e => window.failure = String(e.message || e)); 0")
+                 (wait-until (lambda () (search "kaboom" (eval-js other "window.failure || ''"))))))
+        (destroy-webview other))
+      (check "an asynchronous on-invoke answers later from another thread"
+             (let ((other (make-webview
+                           window
+                           :html "<title>later</title>"
+                           :invoke-async t
+                           :on-invoke (lambda (value answer)
+                                        (sb-thread:make-thread
+                                         (lambda () (sleep 0.1) (funcall answer (* 2 value))))))))
+               (wait-until (lambda () (equal "later" (eval-js other "document.title"))))
+               (eval-js other "iris.invoke(21).then(r => window.doubled = r); 0")
+               (prog1 (wait-until (lambda () (eql 42 (eval-js other "window.doubled || 0"))))
+                 (destroy-webview other))))
+      (check "iris.invoke without a handler rejects"
+             (progn
+               (eval-js webview "iris.invoke(1).catch(e => window.noHandler = String(e.message || e)); 0")
+               (wait-until (lambda () (search "no :on-invoke" (eval-js webview "window.noHandler || ''"))))))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"
              (handler-case (progn (make-webview window :protocols (list (list "https" #'serve))) nil)
                (error (e) (search "itself" (princ-to-string e)))))
