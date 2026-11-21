@@ -62,4 +62,5 @@
            #:run-after
            #:run-every
            #:cancel-timer
-           #:timer-cancelled-p))
+           #:timer-cancelled-p
+           #:quit-application))

@@ -410,7 +410,46 @@ main thread, outside any application."
     (check "stopping twice is harmless"
            (null (stop-application)))
     (check "waiting leaves no handles behind"
-           (= before (handle-count)))))
+           (= before (handle-count))))
+  (application-delegate-checks))
+
+(defun application-delegate-checks ()
+  "Checks of quitting and reopening. Called on the main thread, outside any
+application, since each runs an application of its own."
+  (let ((requests 0) (reopened '()) (last-window nil) (worker nil))
+    (run-application
+     :activation-policy :accessory
+     ;; Refuse the first request, accept the second.
+     :on-quit-request (lambda () (>= (incf requests) 2))
+     :on-reopen (lambda (visible) (push visible reopened))
+     :quit-on-last-window-closed t
+     :on-launch
+     (lambda ()
+       (setf worker
+             (sb-thread:make-thread
+              (lambda ()
+                (let ((delegate (on-main (lambda () (send (cl-iris/window::app) "delegate")))))
+                  (on-main (lambda ()
+                             (send delegate "applicationShouldHandleReopen:hasVisibleWindows:"
+                                   :pointer (cffi:null-pointer) :bool nil :bool)))
+                  (setf last-window
+                        (on-main (lambda ()
+                                   (send delegate "applicationShouldTerminateAfterLastWindowClosed:"
+                                         :pointer (cffi:null-pointer) :bool))))
+                  (quit-application)
+                  (check "a refused quit request keeps the loop running"
+                         (and (= 1 requests) (application-running-p)))
+                  (quit-application)
+                  ;; Stop the loop ourselves only if the accepted request did not.
+                  (unless (eventually (lambda () (not (application-running-p))) :timeout 2)
+                    (stop-application))))))))
+    (sb-thread:join-thread worker :default nil)
+    (check "an accepted quit request stops the loop"
+           (= 2 requests))
+    (check "reopening calls the handler with whether a window is visible"
+           (equal '(nil) reopened))
+    (check "closing the last window can count as a request to quit"
+           last-window)))
 
 ;;; Redefining code while the application runs
 

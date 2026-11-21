@@ -38,6 +38,7 @@
                (:file "traps")
                (:file "dispatch")
                (:file "timers")
+               (:file "app-delegate")
                (:file "application")
                (:file "color")
                (:file "attributes")
