@@ -190,3 +190,50 @@ window becomes the application's key window for when it is next active."
   "True when WINDOW receives keyboard input: it is the key window of the
 application and the application is active."
   (on-main (lambda () (send window "isKeyWindow" :bool))))
+
+;;; Minimizing, maximizing and full screen
+
+(defun minimize-window (window)
+  "Send WINDOW to the Dock."
+  (on-main (lambda () (send window "miniaturize:" :pointer (cffi:null-pointer) :void)))
+  nil)
+
+(defun restore-window (window)
+  "Bring WINDOW back from the Dock."
+  (on-main (lambda () (send window "deminiaturize:" :pointer (cffi:null-pointer) :void)))
+  nil)
+
+(defun window-minimized-p (window)
+  (on-main (lambda () (send window "isMiniaturized" :bool))))
+
+(defun window-maximized-p (window)
+  "True when WINDOW is zoomed to fill its screen (the green button's
+\"Zoom\", not full screen)."
+  (on-main (lambda () (send window "isZoomed" :bool))))
+
+(defun (setf window-maximized-p) (maximized window)
+  (on-main
+   (lambda ()
+     (unless (eq (and maximized t) (send window "isZoomed" :bool))
+       (send window "zoom:" :pointer (cffi:null-pointer) :void))))
+  maximized)
+
+(defconstant +style-full-screen+ (ash 1 14))
+(defconstant +collection-full-screen-primary+ (ash 1 7))
+
+(defun window-fullscreen-p (window)
+  (on-main (lambda () (logtest +style-full-screen+ (send window "styleMask" :unsigned-long)))))
+
+(defun (setf window-fullscreen-p) (fullscreen window)
+  "Enter or leave full screen, in a Space of its own. The change animates
+and finishes a moment after this returns."
+  (on-main
+   (lambda ()
+     (unless (eq (and fullscreen t)
+                 (logtest +style-full-screen+ (send window "styleMask" :unsigned-long)))
+       (send window "setCollectionBehavior:"
+             :unsigned-long (logior +collection-full-screen-primary+
+                                    (send window "collectionBehavior" :unsigned-long))
+             :void)
+       (send window "toggleFullScreen:" :pointer (cffi:null-pointer) :void))))
+  fullscreen)

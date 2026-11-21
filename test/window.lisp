@@ -4,6 +4,13 @@
 
 (in-package #:cl-iris/test)
 
+(defun eventually (predicate &key (timeout 5))
+  "Poll PREDICATE until it returns true or TIMEOUT seconds pass; for changes
+AppKit animates."
+  (loop repeat (* timeout 20)
+        thereis (funcall predicate)
+        do (sleep 0.05)))
+
 (defun window-checks ()
   (check "the worker is not the main thread"
          (not (main-thread-p)))
@@ -111,6 +118,22 @@
                (and (= before (cffi:pointer-address other))
                     (= (front) (cffi:pointer-address window))))))
     (close-window other)
+    (close-window window))
+  (let ((window (make-window :title "minimize and zoom" :width 300 :height 200 :activate nil)))
+    (check "a window can be minimized and restored"
+           (progn (minimize-window window)
+                  (and (eventually (lambda () (window-minimized-p window)))
+                       (progn (restore-window window)
+                              (eventually (lambda () (not (window-minimized-p window))))))))
+    (check "a window can be maximized and brought back"
+           (progn (setf (window-maximized-p window) t)
+                  (and (eventually (lambda () (window-maximized-p window)))
+                       (progn (setf (window-maximized-p window) nil)
+                              (eventually (lambda () (not (window-maximized-p window))))))))
+    ;; Entering full screen takes over a Space on the screen, which a test
+    ;; run must not do; only the resting state is checked.
+    (check "a new window is not in full screen"
+           (not (window-fullscreen-p window)))
     (close-window window))
   (let ((window (make-window :title "borderless" :style '() :activate nil)))
     (check "make-window :style NIL opens a borderless window"

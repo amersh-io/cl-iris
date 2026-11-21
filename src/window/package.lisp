@@ -41,4 +41,9 @@
            #:window-visible-p
            #:activate-application
            #:focus-window
-           #:window-focused-p))
+           #:window-focused-p
+           #:minimize-window
+           #:restore-window
+           #:window-minimized-p
+           #:window-maximized-p
+           #:window-fullscreen-p))
