@@ -275,3 +275,35 @@ drawn as before), or opaque again with the standard background."
                         (send (find-class* "NSColor") "windowBackgroundColor"))
            :void)))
   transparent)
+
+;;; Appearance: light or dark
+
+(defparameter *appearances*
+  '((:light . "NSAppearanceNameAqua")
+    (:dark . "NSAppearanceNameDarkAqua")))
+
+(defun window-appearance (window)
+  "The appearance WINDOW is drawn in now: :LIGHT or :DARK. A window that
+follows the system reports what the system currently uses."
+  (on-main
+   (lambda ()
+     (let ((name (lisp-string (send (send window "effectiveAppearance") "name"))))
+       (if (search "Dark" name) :dark :light)))))
+
+(defun (setf window-appearance) (appearance window)
+  "Draw WINDOW in APPEARANCE, :LIGHT or :DARK, or follow the system with
+:SYSTEM."
+  (let ((name (unless (eq appearance :system)
+                (or (cdr (assoc appearance *appearances*))
+                    (error "Unknown appearance ~S; expected :LIGHT, :DARK or :SYSTEM."
+                           appearance)))))
+    (on-main
+     (lambda ()
+       (send window "setAppearance:"
+             :pointer (if name
+                          (send (find-class* "NSAppearance") "appearanceNamed:"
+                                :pointer (ns-string name))
+                          (cffi:null-pointer))
+             :void))))
+  appearance)
+

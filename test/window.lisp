@@ -148,6 +148,16 @@ AppKit animates."
            (progn (setf (window-transparent-p window) nil)
                   (not (window-transparent-p window))))
     (close-window window))
+  (let ((window (make-window :title "appearance" :width 300 :height 200 :activate nil)))
+    (check "a window can be drawn dark or light"
+           (progn (setf (window-appearance window) :dark)
+                  (and (eq :dark (window-appearance window))
+                       (progn (setf (window-appearance window) :light)
+                              (eq :light (window-appearance window))))))
+    (check "a window can follow the system's appearance again"
+           (progn (setf (window-appearance window) :system)
+                  (member (window-appearance window) '(:light :dark))))
+    (close-window window))
   (let ((window (make-window :title "minimize and zoom" :width 300 :height 200 :activate nil)))
     (check "a window can be minimized and restored"
            (progn (minimize-window window)

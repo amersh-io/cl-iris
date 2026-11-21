@@ -52,4 +52,5 @@
            #:ns-color-components
            #:window-alpha
            #:window-background-color
-           #:window-transparent-p))
+           #:window-transparent-p
+           #:window-appearance))
