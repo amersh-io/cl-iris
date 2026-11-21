@@ -29,7 +29,19 @@ has since been split into `src/objc/`, `src/window/` and `src/webview/`, and:
   (`src/window/dispatch.lisp`, `src/window/application.lisp`). It is stricter
   than the model in one place: a `:wait t` call before the loop has started
   signals `APPLICATION-NOT-RUNNING` instead of waiting;
-- the completion block is a copy/dispose block (`src/objc/blocks.lisp`).
+- the completion block is a copy/dispose block (`MAKE-BLOCK`,
+  `src/objc/blocks.lisp`). Its dispose helper runs the block's `:ON-DROP`
+  function when the block is released without ever being called, and
+  `MAKE-COMPLETION-BLOCK` (`src/webview/eval.lisp`) uses that to end the
+  evaluation with a `JAVASCRIPT-ERROR`, so a waiting `EVAL-JS` caller wakes
+  -- the `copyDispose` design, `MAY_DROP` included;
+- URL scheme requests follow the `asyncGuarded` design
+  (`src/webview/scheme.lisp`): `START-TASK` gives each task a fresh id with
+  `OPEN-TASK`, which records it in `*OPEN-TASKS*` and retains the task (so
+  its address is not reused while the entry is open); `STOP-TASK` closes the
+  entry with `CLOSE-TASK`; every answer, synchronous or from `RESPOND` on any
+  thread, goes through `ANSWER-TASK` on the main thread, which sends only to
+  an open id and closes it.
 
 `scripts/check-spec` runs every `quint test` below; CI runs it on each push.
 
