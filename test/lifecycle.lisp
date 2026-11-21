@@ -101,3 +101,12 @@
            (check "destroying a webview twice is harmless"
                   (null (destroy-webview webview))))
       (close-window window))))
+
+;;; Which webview a handler was called for.
+
+(defun handler-webview-checks ()
+  ;; Pinned: a handler gets only its value; nothing tells it which webview
+  ;; called, so one handler shared by several webviews cannot answer the
+  ;; right page.
+  (check "nothing tells a handler which webview called it (pinned)"
+         (null (find-symbol "*WEBVIEW*" :cl-iris/webview))))
