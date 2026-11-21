@@ -24,7 +24,8 @@
                (:file "convert")
                (:file "pool")
                (:file "classes")
-               (:file "blocks")))
+               (:file "blocks")
+               (:file "exceptions")))
 
 (defsystem "cl-iris/window"
   :description "The NSApplication loop on the main thread, NSWindow, and GCD."

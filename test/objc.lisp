@@ -170,3 +170,36 @@
                                                        :pointer)
                                              :pointer))))
       (release object))))
+
+;;; Uncaught Objective-C exceptions, checked in a child process since they
+;;; end it.
+
+(defun run-child-lisp (&rest forms)
+  "Run FORMS in a fresh Lisp with cl-iris loadable; return its output and exit code."
+  (let ((root (asdf:system-source-directory "cl-iris")))
+    (multiple-value-bind (output error-output code)
+        (uiop:run-program
+         (append (list sb-ext:*runtime-pathname* "--non-interactive" "--no-userinit"
+                       "--load" (namestring (merge-pathnames ".qlot/setup.lisp" root))
+                       "--eval" (format nil "(asdf:load-asd ~S)"
+                                        (namestring (merge-pathnames "cl-iris.asd" root))))
+                 (loop for form in forms
+                       append (list "--eval" (let ((*package* (find-package :cl-user)))
+                                               (prin1-to-string form)))))
+         :directory root :output :string :error-output :string :ignore-error-status t)
+      (values (concatenate 'string output error-output) code))))
+
+(defun exception-tests ()
+  (multiple-value-bind (output code)
+      (run-child-lisp '(asdf:load-system "cl-iris/objc")
+                      '(cl-iris/objc:install-exception-reporter)
+                      '(defun cl-user::index-out-of-range ()
+                        (cl-iris/objc:send (cl-iris/objc:send (cl-iris/objc:find-class* "NSArray") "array")
+                         "objectAtIndex:" :unsigned-long 5))
+                      '(cl-user::index-out-of-range))
+    (check "an uncaught exception ends the process"
+           (/= 0 code))
+    (check "an uncaught exception is reported with its name and reason"
+           (search "uncaught Objective-C exception NSRangeException" output))
+    (check "an uncaught exception is reported with the Lisp backtrace"
+           (search "INDEX-OUT-OF-RANGE" output))))

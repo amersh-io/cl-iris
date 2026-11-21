@@ -41,6 +41,7 @@
            #:class-definition-error
            #:*error-reporter*
            #:report-error
+           #:install-exception-reporter
            #:find-class*
            #:selector
            #:send

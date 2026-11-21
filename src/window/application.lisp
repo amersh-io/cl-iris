@@ -25,6 +25,7 @@ Must be called on the main thread."
     (when *running*
       (error "The application loop is already running."))
     (setf *running* t))
+  (install-exception-reporter)
   (unwind-protect
        (with-cocoa-float-traps
          (with-autorelease-pool
