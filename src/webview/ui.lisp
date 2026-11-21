@@ -3,6 +3,11 @@
 
 (in-package #:cl-iris/webview)
 
+(defun match-parent-opacity (sheet window)
+  "Give SHEET the opacity of the WINDOW it will be attached to, so a sheet on
+a window kept out of sight stays out of sight too."
+  (send sheet "setAlphaValue:" :double (send window "alphaValue" :double) :void))
+
 ;;; New windows: window.open() and links with target=_blank
 
 (defun open-externally (url)
@@ -67,6 +72,7 @@ answer once it is dismissed: T or NIL for :CONFIRM, the text or NIL for
                                             (:confirm ok)
                                             (:prompt (and ok (lisp-string (send field "stringValue"))))
                                             (t nil))))))
+            (match-parent-opacity (send alert "window") window)
             (send alert "beginSheetModalForWindow:completionHandler:"
                   :pointer window :pointer ended :void))
           (release alert)))))
@@ -138,6 +144,7 @@ block with a Lisp answer."
                              (lambda (response)
                                (funcall finish (when (= response 1)
                                                  (url-paths (send panel "URLs"))))))
+            (match-parent-opacity panel window)
             (send panel "beginSheetModalForWindow:completionHandler:"
                   :pointer window :pointer ended :void))))))
 
