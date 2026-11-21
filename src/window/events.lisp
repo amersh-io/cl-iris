@@ -25,8 +25,13 @@ which SEND also accepts the window itself in place of."))
 
 (defun find-window (window)
   "The live WINDOW object for WINDOW (a WINDOW or its NSWindow pointer), or
-NIL once CLOSE-WINDOW has released it."
-  (gethash (objc-address window) *windows*))
+NIL once CLOSE-WINDOW has released it. A WINDOW object is live only while it
+is the one registered at its address: AppKit may reuse the address of a
+released window for a new one."
+  (let ((object (gethash (objc-address window) *windows*)))
+    (and object
+         (or (cffi:pointerp window) (eq object window))
+         object)))
 
 (define-condition window-closed (error)
   ((window :initarg :window :reader window-closed-window))

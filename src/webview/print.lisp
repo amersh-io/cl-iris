@@ -22,7 +22,7 @@ file PDF instead of printing when PDF is given."
   "Print WEBVIEW's page: show the print panel as a sheet on its window, or,
 with PDF, a pathname, write the page to that file without asking. Returns at
 once; the operation runs on the main thread."
-  (on-main
+  (on-webview webview
    (lambda ()
      (let ((window (send webview "window")))
        (when (cffi:null-pointer-p window)

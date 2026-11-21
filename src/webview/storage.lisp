@@ -11,11 +11,13 @@
 (defun cookie-store (webview)
   (send (data-store webview) "httpCookieStore"))
 
-(defun wait-on-main (description function)
-  "Run FUNCTION on the main thread with a REPLY function, and wait until it
-is called; DESCRIPTION names the operation if WebKit drops its handler."
+(defun wait-on-main (webview description function)
+  "Run FUNCTION on the main thread with a REPLY function, once WEBVIEW is
+known to be live, and wait until it is called; DESCRIPTION names the
+operation if WebKit drops its handler."
   (on-main-deferred
    (lambda (reply fail)
+     (live-webview webview)
      (funcall function reply
               (lambda () (funcall fail (make-condition
                                         'simple-error
@@ -81,7 +83,7 @@ is called; DESCRIPTION names the operation if WebKit drops its handler."
 (defun cookies (webview &key url)
   "The cookies WEBVIEW's data store holds, as plists; with URL, only those it
 would send to URL."
-  (let ((all (wait-on-main
+  (let ((all (wait-on-main webview
               "getAllCookies:"
               (lambda (reply dropped)
                 (let ((block (make-block (cffi:callback array-received)
@@ -99,7 +101,7 @@ would send to URL."
         all)))
 
 (defun call-cookie-store (webview selector cookie)
-  (wait-on-main
+  (wait-on-main webview
    selector
    (lambda (reply dropped)
      (let ((block (make-block (cffi:callback finished) (lambda () (funcall reply t))
@@ -131,7 +133,7 @@ or NIL for a session cookie."
   "Remove everything WEBVIEW's data store holds -- cookies, local storage,
 caches, databases -- and wait until it is gone. Every webview sharing the
 store (all but incognito ones, by default) loses it too."
-  (wait-on-main
+  (wait-on-main webview
    "removeDataOfTypes:modifiedSince:completionHandler:"
    (lambda (reply dropped)
      (let ((block (make-block (cffi:callback finished) (lambda () (funcall reply t))

@@ -11,6 +11,14 @@ change the API.
 - With `:quit-on-last-window-closed`, a loop no longer quits before its
   `on-launch` because a window closed in an earlier loop: only a window
   closed in the running loop counts.
+- A destroyed webview, or a closed window, is no longer taken for a newer
+  one that Objective-C gave the same address; using it signals
+  `webview-destroyed` or `window-closed`. Every webview function checks,
+  `eval-js :wait nil` included, and destroying a webview twice is harmless.
+
+### Added
+
+- `webview-destroyed`, `webview-destroyed-p`.
 
 ## 0.1.0 — 2026-11-21
 

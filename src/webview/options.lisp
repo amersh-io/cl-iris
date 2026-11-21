@@ -41,7 +41,7 @@ CONFIGURATION, before the webview is made from it. Main thread only."
 
 (defun webview-autoplay-p (webview)
   "True if WEBVIEW plays audio and video without waiting for a user gesture."
-  (on-main
+  (on-webview webview
    (lambda ()
      (= +media-types-none+
         (send (configuration webview) "mediaTypesRequiringUserActionForPlayback"
@@ -77,9 +77,9 @@ and written by SETTER, and the MAKE-WEBVIEW option KEYWORD that sets it."
   `(progn
      (defun ,name (webview)
        ,@(when documentation (list documentation))
-       (on-main (lambda () (send webview ,selector :bool))))
+       (on-webview webview (lambda () (send webview ,selector :bool))))
      (defun (setf ,name) (value webview)
-       (on-main (lambda () (send webview ,setter :bool (and value t) :void)))
+       (on-webview webview (lambda () (send webview ,setter :bool (and value t) :void)))
        value)
      (define-view-option ,keyword (webview value)
        (send webview ,setter :bool (and value t) :void))))
@@ -96,7 +96,7 @@ or Inspect Element in its context menu).")
 
 (defun webview-user-agent (webview)
   "The user agent WEBVIEW sends: its custom one if set, else WebKit's."
-  (on-main
+  (on-webview webview
    (lambda ()
      (let ((custom (send webview "customUserAgent")))
        (if (or (cffi:null-pointer-p custom) (zerop (send custom "length" :unsigned-long)))
@@ -105,7 +105,7 @@ or Inspect Element in its context menu).")
 
 (defun (setf webview-user-agent) (user-agent webview)
   "Make WEBVIEW send USER-AGENT from its next request on; NIL restores WebKit's."
-  (on-main
+  (on-webview webview
    (lambda ()
      (send webview "setCustomUserAgent:"
            :pointer (if user-agent (ns-string user-agent) (cffi:null-pointer))
@@ -119,11 +119,11 @@ or Inspect Element in its context menu).")
 
 (defun webview-visible-p (webview)
   "True unless WEBVIEW has been hidden."
-  (on-main (lambda () (not (send webview "isHidden" :bool)))))
+  (on-webview webview (lambda () (not (send webview "isHidden" :bool)))))
 
 (defun (setf webview-visible-p) (visible webview)
   "Show or hide WEBVIEW; a hidden webview keeps running its page."
-  (on-main (lambda () (send webview "setHidden:" :bool (not visible) :void)))
+  (on-webview webview (lambda () (send webview "setHidden:" :bool (not visible) :void)))
   visible)
 
 (define-view-option :visible (webview visible)
@@ -142,12 +142,12 @@ or Inspect Element in its context menu).")
 (defun webview-transparent-p (webview)
   "True if WEBVIEW draws no background of its own, letting what is behind it
 show through wherever the page itself is transparent."
-  (on-main
+  (on-webview webview
    (lambda ()
      (not (objc->lisp (send webview "valueForKey:" :pointer (ns-string "drawsBackground")))))))
 
 (defun (setf webview-transparent-p) (transparent webview)
-  (on-main (lambda () (set-draws-background webview (not transparent))))
+  (on-webview webview (lambda () (set-draws-background webview (not transparent))))
   transparent)
 
 (define-view-option :transparent (webview transparent)
@@ -164,7 +164,7 @@ show through wherever the page itself is transparent."
 (defun webview-incognito-p (webview)
   "True if WEBVIEW keeps cookies, storage and caches in memory only, apart
 from every other webview, and forgets them when it goes."
-  (on-main
+  (on-webview webview
    (lambda ()
      (not (send (send (configuration webview) "websiteDataStore") "isPersistent" :bool)))))
 
@@ -191,7 +191,7 @@ from every other webview, and forgets them when it goes."
 (defun webview-background-throttling (webview)
   "What WebKit does with WEBVIEW's page while it is not visible: :SUSPEND it,
 :THROTTLE its timers, or :NONE. NIL before macOS 14."
-  (on-main
+  (on-webview webview
    (lambda ()
      (let ((preferences (send (configuration webview) "preferences")))
        (when (responds-to-p preferences "inactiveSchedulingPolicy")
@@ -236,7 +236,7 @@ from every other webview, and forgets them when it goes."
 
 (defun webview-proxy-count (webview)
   "How many proxies the data store of WEBVIEW routes through."
-  (on-main
+  (on-webview webview
    (lambda ()
      (let ((store (send (configuration webview) "websiteDataStore")))
        (if (responds-to-p store "proxyConfigurations")
@@ -245,10 +245,10 @@ from every other webview, and forgets them when it goes."
 
 (defun webview-accepts-first-mouse-p (webview)
   "True if a click on WEBVIEW in an inactive window also reaches the page."
-  (on-main (lambda () (send webview "acceptsFirstMouse:" :pointer (cffi:null-pointer) :bool))))
+  (on-webview webview (lambda () (send webview "acceptsFirstMouse:" :pointer (cffi:null-pointer) :bool))))
 
 (defun (setf webview-accepts-first-mouse-p) (accept webview)
-  (on-main (lambda () (setf (getf (webview-options (find-webview webview)) :accept-first-mouse)
+  (on-webview webview (lambda () (setf (getf (webview-options (find-webview webview)) :accept-first-mouse)
                             (and accept t))))
   accept)
 
@@ -265,7 +265,7 @@ from every other webview, and forgets them when it goes."
 
 (defun webview-background-color (webview)
   "WEBVIEW's under-page color as (red green blue alpha) from 0 to 1."
-  (on-main
+  (on-webview webview
    (lambda ()
      (ns-color-components (send webview "underPageBackgroundColor")))))
 
@@ -273,7 +273,7 @@ from every other webview, and forgets them when it goes."
   "Stop WEBVIEW drawing a white background of its own, so that what is behind
 it shows where the page paints nothing, and use COLOR -- \"#rrggbb\",
 \"#rrggbbaa\", (red green blue [alpha]) or :CLEAR -- past the page's edges."
-  (on-main (lambda () (set-background-color webview color)))
+  (on-webview webview (lambda () (set-background-color webview color)))
   color)
 
 (define-view-option :background-color (webview color)
@@ -285,13 +285,13 @@ it shows where the page paints nothing, and use COLOR -- \"#rrggbb\",
 
 (defun webview-zoom (webview)
   "WEBVIEW's page zoom: 1 is 100%."
-  (on-main (lambda () (send webview "pageZoom" :double))))
+  (on-webview webview (lambda () (send webview "pageZoom" :double))))
 
 (defun (setf webview-zoom) (zoom webview)
   "Zoom WEBVIEW's page to ZOOM, a positive number (1 is 100%)."
   (unless (and (realp zoom) (plusp zoom))
     (error "A zoom is a positive number, not ~S." zoom))
-  (on-main (lambda () (send webview "setPageZoom:" :double (float zoom 1d0) :void)))
+  (on-webview webview (lambda () (send webview "setPageZoom:" :double (float zoom 1d0) :void)))
   zoom)
 
 (define-view-option :zoom (webview zoom)

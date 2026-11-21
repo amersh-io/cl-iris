@@ -61,10 +61,43 @@
            (stale (make-instance 'webview :pointer (webview-pointer webview)
                                           :window window)))
       (unwind-protect
-           ;; Pinned: the stale object is taken for the live one.
-           (check "a stale webview object finds the newer webview at its address (pinned)"
-                  (eq webview (with-main-thread () (find-webview stale))))
+           (progn
+             (check "a stale webview object does not find the newer webview at its address"
+                    (null (with-main-thread () (find-webview stale))))
+             (check "the newer webview is still found by its own object and its pointer"
+                    (and (eq webview (with-main-thread () (find-webview webview)))
+                         (eq webview (with-main-thread () (find-webview (webview-pointer webview))))))
+             (check "using a stale webview object signals WEBVIEW-DESTROYED"
+                    (every (lambda (f)
+                             (handler-case (progn (funcall f stale) nil)
+                               (webview-destroyed () t)))
+                           (list (lambda (w) (eval-js w "1"))
+                                 #'webview-url #'reload #'webview-zoom #'webview-bounds
+                                 (lambda (w) (load-html w "<p>no</p>"))
+                                 (lambda (w) (setf (webview-zoom w) 2))
+                                 #'cookies)))
+             (check "a stale webview object counts as destroyed"
+                    (webview-destroyed-p stale)))
         (destroy-webview webview)))
     (let ((stale (make-instance 'window :pointer (window-pointer window))))
-      (check "a stale window object finds the newer window at its address (pinned)"
-             (eq window (with-main-thread () (find-window stale)))))))
+      (check "a stale window object does not find the newer window at its address"
+             (null (with-main-thread () (find-window stale))))
+      (check "using a stale window object signals WINDOW-CLOSED"
+             (handler-case (progn (window-title stale) nil)
+               (window-closed () t)))))
+  (let* ((window (make-window :title "destroyed" :width 200 :height 100 :activate nil))
+         (webview (make-webview window :html "<title>d</title>")))
+    (unwind-protect
+         (progn
+           (destroy-webview webview)
+           (check "a destroyed webview counts as destroyed"
+                  (webview-destroyed-p webview))
+           (check "eval-js on a destroyed webview signals instead of crashing"
+                  (handler-case (progn (eval-js webview "1") nil)
+                    (webview-destroyed () t)))
+           (check "eval-js without waiting on a destroyed webview signals at once"
+                  (handler-case (progn (eval-js webview "1" :wait nil) nil)
+                    (webview-destroyed () t)))
+           (check "destroying a webview twice is harmless"
+                  (null (destroy-webview webview))))
+      (close-window window))))

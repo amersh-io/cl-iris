@@ -19,7 +19,7 @@ CONTAINER's top-left corner."
 (defun webview-bounds (webview)
   "WEBVIEW's position and size within its window, as a list (x y width
 height) in points from the top-left corner of the content area."
-  (on-main
+  (on-webview webview
    (lambda ()
      (let* ((frame (send webview "frame" (:struct ns-rect)))
             (superview (send webview "superview"))
@@ -38,7 +38,7 @@ height) in points from the top-left corner of the content area."
 
 (defun (setf webview-bounds) (bounds webview)
   "Move and resize WEBVIEW within its window; see WEBVIEW-BOUNDS."
-  (on-main
+  (on-webview webview
    (lambda ()
      (let ((superview (send webview "superview")))
        (when (cffi:null-pointer-p superview)
@@ -50,16 +50,16 @@ height) in points from the top-left corner of the content area."
 
 (defun focus-webview (webview)
   "Give WEBVIEW the keyboard focus within its window."
-  (on-main (lambda () (send (send webview "window") "makeFirstResponder:" :pointer webview :bool))))
+  (on-webview webview (lambda () (send (send webview "window") "makeFirstResponder:" :pointer webview :bool))))
 
 (defun focus-parent (webview)
   "Take the keyboard focus away from WEBVIEW, back to its window."
-  (on-main (lambda () (send (send webview "window") "makeFirstResponder:"
+  (on-webview webview (lambda () (send (send webview "window") "makeFirstResponder:"
                             :pointer (cffi:null-pointer) :bool))))
 
 (defun webview-focused-p (webview)
   "True if WEBVIEW, or a view inside it, has its window's keyboard focus."
-  (on-main
+  (on-webview webview
    (lambda ()
      (let* ((window (send webview "window"))
             (responder (if (cffi:null-pointer-p window)
@@ -195,7 +195,7 @@ one registered twice."
 (defun add-init-script (webview script)
   "Run SCRIPT in WEBVIEW at the start of every document from the next load
 on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
-  (on-main
+  (on-webview webview
    (lambda ()
      (add-user-script (send (send webview "configuration") "userContentController")
                       script)))
@@ -275,14 +275,14 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
 
 (defun load-url (webview url &key headers)
   "Start loading URL in WEBVIEW, sending HEADERS (an alist) with the request."
-  (on-main
+  (on-webview webview
    (lambda ()
      (send webview "loadRequest:" :pointer (url-request url headers))))
   nil)
 
 (defun load-html (webview html &key (base-url "about:blank"))
   "Show the string HTML in WEBVIEW."
-  (on-main
+  (on-webview webview
    (lambda ()
      (send webview "loadHTMLString:baseURL:"
            :pointer (ns-string html)
@@ -290,25 +290,33 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
   nil)
 
 (defun destroy-webview (webview)
-  "Detach WEBVIEW from its window and release it."
+  "Detach WEBVIEW from its window and release it. Destroying it again does
+nothing; any other use of it afterwards signals WEBVIEW-DESTROYED."
   (on-main
    (lambda ()
-     (let ((delegate (route webview :delegate)))
-       (stop-observing-title webview delegate)
-       (send webview "setNavigationDelegate:" :pointer (cffi:null-pointer) :void)
-       (send webview "setUIDelegate:" :pointer (cffi:null-pointer) :void)
-       (remhash (objc-address webview) *routes*)
-       (release delegate))
-     (let ((controller (send (send webview "configuration") "userContentController")))
-       (send controller "removeScriptMessageHandlerForName:"
-             :pointer (ns-string *message-handler-name*) :void)
-       (send controller "removeScriptMessageHandlerForName:contentWorld:"
-             :pointer (ns-string *invoke-handler-name*)
-             :pointer (send (find-class* "WKContentWorld") "pageWorld")
-             :void))
-     (send webview "removeFromSuperview" :void)
-     (release webview)))
+     (when (find-webview webview)
+       (%destroy-webview webview))))
   nil)
+
+(defun %destroy-webview (webview)
+  "On the main thread: take the live WEBVIEW apart."
+  (let ((delegate (route webview :delegate)))
+    (stop-observing-title webview delegate)
+    (send webview "setNavigationDelegate:" :pointer (cffi:null-pointer) :void)
+    (send webview "setUIDelegate:" :pointer (cffi:null-pointer) :void)
+    (let ((object (find-webview webview)))
+      (when object (setf (%webview-destroyed object) t)))
+    (remhash (objc-address webview) *routes*)
+    (release delegate))
+  (let ((controller (send (send webview "configuration") "userContentController")))
+    (send controller "removeScriptMessageHandlerForName:"
+          :pointer (ns-string *message-handler-name*) :void)
+    (send controller "removeScriptMessageHandlerForName:contentWorld:"
+          :pointer (ns-string *invoke-handler-name*)
+          :pointer (send (find-class* "WKContentWorld") "pageWorld")
+          :void))
+  (send webview "removeFromSuperview" :void)
+  (release webview))
 
 (defmacro with-webview ((var window &rest options) &body body)
   "Bind VAR to a webview made in WINDOW with MAKE-WEBVIEW and OPTIONS, run

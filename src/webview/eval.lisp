@@ -58,6 +58,7 @@ main thread with the value and an error message (or NIL)."
            (error "EVAL-JS cannot wait on the main thread; pass :WAIT NIL and a :CALLBACK."))
          (on-main-deferred
           (lambda (reply fail)
+            (live-webview webview)
             (evaluate webview script
                       (lambda (value message)
                         (if message
@@ -65,9 +66,10 @@ main thread with the value and an error message (or NIL)."
                             (funcall reply value)))))
           :timeout timeout))
         (t
+         (check-not-destroyed webview)
          (let ((callback (or callback
                              (lambda (value message)
                                (declare (ignore value))
                                (when message (report-error "eval-js" message))))))
-           (on-main (lambda () (evaluate webview script callback)) :wait nil))
+           (on-webview webview (lambda () (evaluate webview script callback)) :wait nil))
          nil)))

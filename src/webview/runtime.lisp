@@ -22,7 +22,10 @@
   ((options :initarg :options :accessor webview-options
             :documentation "MAKE-WEBVIEW's options, with :DELEGATE added.")
    (window :initarg :window :reader webview-window
-           :documentation "The WINDOW the webview was made in."))
+           :documentation "The WINDOW the webview was made in.")
+   (destroyed :initform nil :accessor %webview-destroyed
+              :documentation "Set by DESTROY-WEBVIEW, so other threads can
+refuse a destroyed webview without asking the main thread."))
   (:documentation "A webview made by MAKE-WEBVIEW. WEBVIEW-POINTER is its
 WKWebView, which SEND also accepts the webview itself in place of."))
 
@@ -35,8 +38,43 @@ WKWebView, which SEND also accepts the webview itself in place of."))
 
 (defun find-webview (webview)
   "The live WEBVIEW object for WEBVIEW (a WEBVIEW or its WKWebView pointer),
-or NIL once DESTROY-WEBVIEW has released it."
-  (gethash (objc-address webview) *routes*))
+or NIL once DESTROY-WEBVIEW has released it. A WEBVIEW object is live only
+while it is the one registered at its address: WebKit may reuse the address
+of a destroyed webview for a new one."
+  (let ((object (gethash (objc-address webview) *routes*)))
+    (and object
+         (or (cffi:pointerp webview) (eq object webview))
+         object)))
+
+(define-condition webview-destroyed (error)
+  ((webview :initarg :webview :reader webview-destroyed-webview))
+  (:documentation "A webview released by DESTROY-WEBVIEW was used again;
+WEBVIEW-DESTROYED-WEBVIEW is the webview.")
+  (:report "The webview has been destroyed with DESTROY-WEBVIEW and can no longer be used."))
+
+(defun check-not-destroyed (webview)
+  "Signal WEBVIEW-DESTROYED at once, on any thread, if WEBVIEW is a webview
+object DESTROY-WEBVIEW has released."
+  (when (and (typep webview 'webview) (%webview-destroyed webview))
+    (error 'webview-destroyed :webview webview)))
+
+(defun live-webview (webview)
+  "On the main thread: the live WEBVIEW object for WEBVIEW, or signal
+WEBVIEW-DESTROYED. A message to a released WKWebView would crash the process."
+  (or (find-webview webview)
+      (error 'webview-destroyed :webview webview)))
+
+(defun on-webview (webview function &rest options)
+  "Run FUNCTION on the main thread, as ON-MAIN does with OPTIONS, after
+checking that WEBVIEW has not been destroyed (see LIVE-WEBVIEW)."
+  (apply #'on-main (lambda ()
+                     (live-webview webview)
+                     (funcall function))
+         options))
+
+(defun webview-destroyed-p (webview)
+  "True once DESTROY-WEBVIEW has released WEBVIEW."
+  (not (on-main (lambda () (find-webview webview)))))
 
 (defun route (webview key)
   "The option KEY of WEBVIEW, a WEBVIEW or its WKWebView."

@@ -184,6 +184,11 @@ A handler given as a symbol, `:on-message 'my-handler`, follows
 redefinitions of `my-handler`. Handlers run on the main thread; an error in
 one goes to `report-error` rather than into WebKit.
 
+`destroy-webview` releases a webview; using it afterwards signals
+`webview-destroyed` (and a closed window, `window-closed`) instead of
+messaging a released object, even when a newer webview or window has been
+given the same address. Destroying a webview twice is harmless.
+
 ## Going below the API
 
 A `window` or `webview` is an `objc-object` standing for its `NSWindow` or
