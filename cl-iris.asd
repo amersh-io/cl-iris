@@ -25,6 +25,7 @@
                (:file "pool")
                (:file "classes")
                (:file "blocks")
+               (:file "super")
                (:file "exceptions")))
 
 (defsystem "cl-iris/window"

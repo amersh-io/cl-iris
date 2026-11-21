@@ -45,6 +45,7 @@
            #:find-class*
            #:selector
            #:send
+           #:send-super
            #:ns-string
            #:lisp-string
            #:with-autorelease-pool
