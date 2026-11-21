@@ -147,6 +147,20 @@
                (prog1 (and (wait-until (lambda () (equal "inline" (eval-js other "document.title"))))
                            (equal "https://example.invalid/" (eval-js other "location.href")))
                  (destroy-webview other))))
+      (check "a webview's first request carries the headers it was given"
+             (let ((other (make-webview window :on-request #'serve :url "iris://app/data.txt"
+                                               :headers '(("X-Test" . "first")))))
+               (prog1 (wait-until (lambda ()
+                                    (and *last-request*
+                                         (equal "first" (request-header *last-request* "X-Test")))))
+                 (destroy-webview other))))
+      (check "load-url sends extra headers"
+             (progn
+               (load-url webview "iris://app/data.txt" :headers '(("X-Test" . "again")))
+               (wait-until (lambda () (equal "again" (request-header *last-request* "X-Test"))))))
+      (check "load-url refuses what is not a URL"
+             (handler-case (progn (load-url webview "not a url") nil)
+               (error (e) (search "absolute URL" (princ-to-string e)))))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"
              (handler-case (progn (make-webview window :protocols (list (list "https" #'serve))) nil)
                (error (e) (search "itself" (princ-to-string e)))))

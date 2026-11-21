@@ -5,7 +5,7 @@
 ;;; Webviews
 
 (defun make-webview (window &rest options
-                     &key on-message (scheme "iris") on-request protocols url html
+                     &key on-message (scheme "iris") on-request protocols url headers html
                        (base-url "about:blank")
                      &allow-other-keys)
   "Fill WINDOW with a new WKWebView and return it.
@@ -23,7 +23,7 @@ and a RESPONDER instead, returns at once, and answers later with RESPOND,
 from any thread. ON-REQUEST is shorthand for one synchronous protocol named
 SCHEME.
 
-If URL is given, it is loaded; or else HTML, a string, is shown as if
+If URL is given, it is loaded, with HEADERS (an alist); or else HTML, a string, is shown as if
 loaded from BASE-URL."
   (declare (ignore on-message))
   (when (and url html)
@@ -31,9 +31,10 @@ loaded from BASE-URL."
   (let* ((protocols (append (when on-request (list (list scheme on-request)))
                             protocols))
          (options (list* :protocols (normalize-protocols protocols)
-                         (remove-keys options :protocols :on-request :scheme)))
+                         (remove-keys options :protocols :on-request :scheme
+                                      :url :headers :html :base-url)))
          (webview (on-main (lambda () (%make-webview window options)))))
-    (cond (url (load-url webview url))
+    (cond (url (load-url webview url :headers headers))
           (html (load-html webview html :base-url base-url)))
     webview))
 
@@ -79,14 +80,32 @@ one registered twice."
       (send window "setContentView:" :pointer webview :void)
       webview)))
 
-(defun load-url (webview url)
-  "Start loading URL in WEBVIEW."
+(defun ns-url (url)
+  "An NSURL for the absolute URL string URL, or an error."
+  (let ((object (send (find-class* "NSURL") "URLWithString:" :pointer (ns-string url))))
+    ;; Recent Foundation percent-encodes rather than rejecting, so also insist
+    ;; on a scheme: a relative URL has nowhere to load from.
+    (when (or (cffi:null-pointer-p object)
+              (cffi:null-pointer-p (send object "scheme")))
+      (error "Not a valid absolute URL: ~S" url))
+    object))
+
+(defun url-request (url headers)
+  "An NSURLRequest for URL carrying HEADERS, an alist."
+  (let ((request (send (find-class* "NSMutableURLRequest") "requestWithURL:"
+                       :pointer (ns-url url))))
+    (loop for (name . value) in headers
+          do (send request "setValue:forHTTPHeaderField:"
+                   :pointer (ns-string (princ-to-string value))
+                   :pointer (ns-string name)
+                   :void))
+    request))
+
+(defun load-url (webview url &key headers)
+  "Start loading URL in WEBVIEW, sending HEADERS (an alist) with the request."
   (on-main
    (lambda ()
-     (send webview "loadRequest:"
-           :pointer (send (find-class* "NSURLRequest") "requestWithURL:"
-                          :pointer (send (find-class* "NSURL") "URLWithString:"
-                                         :pointer (ns-string url))))))
+     (send webview "loadRequest:" :pointer (url-request url headers))))
   nil)
 
 (defun load-html (webview html &key (base-url "about:blank"))
@@ -95,7 +114,7 @@ one registered twice."
    (lambda ()
      (send webview "loadHTMLString:baseURL:"
            :pointer (ns-string html)
-           :pointer (send (find-class* "NSURL") "URLWithString:" :pointer (ns-string base-url)))))
+           :pointer (ns-url base-url))))
   nil)
 
 (defun destroy-webview (webview)

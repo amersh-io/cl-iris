@@ -17,7 +17,7 @@ Status: **done** (with the test that covers it), **planned**, or
 |---|---|---|---|
 | `with_id` | the webview object is its own identity | out of scope | Lisp code holds the object itself |
 | `with_url` | `make-webview :url` | done | "a page served from Lisp posts a message back" |
-| `with_url_and_headers`, `with_headers` | `make-webview :headers` | planned | |
+| `with_url_and_headers`, `with_headers` | `make-webview :headers` | done | "a webview's first request carries the headers it was given" |
 | `with_html` | `make-webview :html` (and `:base-url`) | done | "a webview can start from a string of HTML" |
 | `with_initialization_script` | `:init-scripts` | planned | |
 | `with_initialization_script_for_main_only` | `:init-scripts` with a main-frame flag | planned | |
@@ -56,7 +56,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `evaluate_script` | `eval-js :wait nil` | done | "a message from JavaScript is answered by eval-js" |
 | `evaluate_script_with_callback` | `eval-js` (waits) or `:callback` | done | "eval-js returns strings", "eval-js signals JavaScript errors" |
 | `load_url` | `load-url` | done | "a page served from Lisp posts a message back" |
-| `load_url_with_headers` | `load-url :headers` | planned | |
+| `load_url_with_headers` | `load-url :headers` | done | "load-url sends extra headers" |
 | `load_html` | `load-html` | done | "an answer to a stopped request is dropped, not sent" |
 | `url` | `webview-url` | planned | |
 | `reload`, `go_back`, `go_forward` | `reload`, `go-back`, `go-forward` | planned | |
