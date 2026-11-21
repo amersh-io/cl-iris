@@ -24,6 +24,12 @@
            #:webview-accepts-first-mouse-p
            #:webview-bounds
            #:webview-background-color
+           #:webview-url
+           #:reload
+           #:can-go-back-p
+           #:can-go-forward-p
+           #:go-back
+           #:go-forward
            #:focus-webview
            #:webview-focused-p
            #:eval-js

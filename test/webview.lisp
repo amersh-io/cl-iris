@@ -539,6 +539,33 @@ small page; return the port."
                (progn (eval-js other "document.title = 'two'; 0")
                       (wait-until (lambda () (equal "two" (first titles))))))
         (destroy-webview other))
+      (let* ((loads 0)
+             (other (make-webview window
+                                  :protocols (list (list "hist" (lambda (r)
+                                                                  (incf loads)
+                                                                  (format nil "<title>~A</title>" (request-url r)))))
+                                  :url "hist://one/")))
+        (flet ((at (url) (wait-until (lambda () (and (equal url (webview-url other))
+                                                     (equal url (eval-js other "document.title")))))))
+          (check "webview-url tells where a webview is"
+                 (at "hist://one/"))
+          (check "a fresh webview cannot go back or forward"
+                 (and (not (can-go-back-p other)) (not (can-go-forward-p other))
+                      (null (go-back other))))
+          (check "going back and forward moves through history"
+                 (and (progn (load-url other "hist://two/") (at "hist://two/"))
+                      (can-go-back-p other)
+                      (go-back other) (at "hist://one/")
+                      (can-go-forward-p other)
+                      (go-forward other) (at "hist://two/")))
+          (check "reload loads the page again"
+                 (let ((before loads))
+                   (reload other)
+                   (wait-until (lambda () (> loads before))))))
+        (destroy-webview other))
+      (check "webview-url is NIL before anything loads"
+             (let ((other (make-webview window)))
+               (prog1 (null (webview-url other)) (destroy-webview other))))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

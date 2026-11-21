@@ -58,9 +58,9 @@ Status: **done** (with the test that covers it), **planned**, or
 | `load_url` | `load-url` | done | "a page served from Lisp posts a message back" |
 | `load_url_with_headers` | `load-url :headers` | done | "load-url sends extra headers" |
 | `load_html` | `load-html` | done | "an answer to a stopped request is dropped, not sent" |
-| `url` | `webview-url` | planned | |
-| `reload`, `go_back`, `go_forward` | `reload`, `go-back`, `go-forward` | planned | |
-| `can_go_back`, `can_go_forward` | `can-go-back-p`, `can-go-forward-p` | planned | |
+| `url` | `webview-url` | done | "webview-url tells where a webview is" |
+| `reload`, `go_back`, `go_forward` | `reload`, `go-back`, `go-forward` | done | "going back and forward moves through history", "reload loads the page again" |
+| `can_go_back`, `can_go_forward` | `can-go-back-p`, `can-go-forward-p` | done | "a fresh webview cannot go back or forward" |
 | `zoom` | `(setf webview-zoom)` | planned | |
 | `set_background_color` | `(setf webview-background-color)` | done | "the background color can change on a live webview" |
 | `bounds`, `set_bounds` | `webview-bounds`, `(setf webview-bounds)` | done | "a webview can be moved and resized" |

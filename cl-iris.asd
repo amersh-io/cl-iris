@@ -61,6 +61,7 @@
                (:file "delegate")
                (:file "options")
                (:file "webview")
+               (:file "history")
                (:file "eval")))
 
 (defsystem "cl-iris/test"
