@@ -67,6 +67,7 @@ WINDOW object, EVENT and ARGUMENTS."
     (let* ((window (notification-window notification))
            (object (find-window window)))
       (when object (setf (%window-closed object) t))
+      (setf *window-closed-this-loop* t)
       (notify window :closed)))
   (:method "windowDidResize:" :void (self (notification :pointer))
     (let ((window (notification-window notification)))

@@ -46,7 +46,8 @@ Must be called on the main thread."
        ;; [NSApp run], and so see these bindings.
        (let ((*on-quit-request* on-quit-request)
              (*on-reopen* on-reopen)
-             (*quit-on-last-window-closed* quit-on-last-window-closed))
+             (*quit-on-last-window-closed* quit-on-last-window-closed)
+             (*window-closed-this-loop* nil))
          (with-cocoa-float-traps
            (with-autorelease-pool
              (let ((app (app))

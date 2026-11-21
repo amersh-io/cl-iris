@@ -703,7 +703,7 @@ main thread, outside any application."
 (defun application-delegate-checks ()
   "Checks of quitting and reopening. Called on the main thread, outside any
 application, since each runs an application of its own."
-  (let ((requests 0) (reopened '()) (last-window nil) (worker nil))
+  (let ((requests 0) (reopened '()) (last-window nil) (before-any-close t) (worker nil))
     (run-application
      :activation-policy :accessory
      ;; Refuse the first request, accept the second.
@@ -719,10 +719,15 @@ application, since each runs an application of its own."
                   (on-main (lambda ()
                              (send delegate "applicationShouldHandleReopen:hasVisibleWindows:"
                                    :pointer (cffi:null-pointer) :bool nil :bool)))
-                  (setf last-window
-                        (on-main (lambda ()
-                                   (send delegate "applicationShouldTerminateAfterLastWindowClosed:"
-                                         :pointer (cffi:null-pointer) :bool))))
+                  (flet ((ask ()
+                           (on-main (lambda ()
+                                      (send delegate "applicationShouldTerminateAfterLastWindowClosed:"
+                                            :pointer (cffi:null-pointer) :bool)))))
+                    (setf before-any-close (ask))
+                    ;; As if a window had closed in this loop, without
+                    ;; AppKit's own check quitting the test's loop.
+                    (on-main (lambda () (setf cl-iris/window::*window-closed-this-loop* t)))
+                    (setf last-window (ask)))
                   (quit-application)
                   (check "a refused quit request keeps the loop running"
                          (and (= 1 requests) (application-running-p)))
@@ -736,7 +741,9 @@ application, since each runs an application of its own."
     (check "reopening calls the handler with whether a window is visible"
            (equal '(nil) reopened))
     (check "closing the last window can count as a request to quit"
-           last-window)))
+           last-window)
+    (check "the last window counts only once a window has closed in this loop"
+           (not before-any-close))))
 
 ;;; Redefining code while the application runs
 

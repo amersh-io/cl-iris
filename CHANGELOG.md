@@ -4,6 +4,14 @@ All notable changes to cl-iris are listed here. The project follows
 [Semantic Versioning](https://semver.org/); until 1.0, a minor release may
 change the API.
 
+## Unreleased
+
+### Fixed
+
+- With `:quit-on-last-window-closed`, a loop no longer quits before its
+  `on-launch` because a window closed in an earlier loop: only a window
+  closed in the running loop counts.
+
 ## 0.1.0 — 2026-11-21
 
 The first release: native windows and webviews for SBCL on macOS (Apple

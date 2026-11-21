@@ -17,6 +17,11 @@ clicks the Dock icon or opens the running application again.")
 (defvar *quit-on-last-window-closed* nil
   "True to treat closing the last window as a request to quit.")
 
+(defvar *window-closed-this-loop* nil
+  "True once a window has closed during the current RUN-APPLICATION loop.
+AppKit may ask whether to quit after the last window closed in an earlier
+loop; only a close in this loop counts.")
+
 (defconstant +terminate-cancel+ 0)
 
 (define-objc-class "CLIrisApplicationDelegate" (:protocols ("NSApplicationDelegate"))
@@ -34,7 +39,7 @@ clicks the Dock icon or opens the running application again.")
     t)
   (:method "applicationShouldTerminateAfterLastWindowClosed:" :bool (self (sender :pointer))
     (declare (ignore sender))
-    (and *quit-on-last-window-closed* t)))
+    (and *quit-on-last-window-closed* *window-closed-this-loop* t)))
 
 (defun quit-application ()
   "Ask to quit, as the Quit menu item does: the quit request handler decides
