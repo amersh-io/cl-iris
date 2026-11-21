@@ -43,6 +43,12 @@
            (string= "cl-iris test" (window-title window)))
     (check "a window has the content size asked for"
            (equal '(640d0 400d0) (multiple-value-list (window-content-size window))))
+    (check "a window's title can be changed"
+           (progn (setf (window-title window) "renamed")
+                  (string= "renamed" (window-title window))))
+    (check "a window can be resized"
+           (progn (resize-window window 500 300)
+                  (equal '(500d0 300d0) (multiple-value-list (window-content-size window)))))
     (close-window window)))
 
 (defun application-tests (checks &key (timeout 60))

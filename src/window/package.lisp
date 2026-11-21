@@ -22,4 +22,5 @@
            #:close-window
            #:window-number
            #:window-title
-           #:window-content-size))
+           #:window-content-size
+           #:resize-window))

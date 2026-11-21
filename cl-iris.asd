@@ -38,7 +38,8 @@
                (:file "traps")
                (:file "dispatch")
                (:file "application")
-               (:file "window")))
+               (:file "window")
+               (:file "attributes")))
 
 (defsystem "cl-iris/webview"
   :description "WKWebView with JavaScript <-> Lisp messaging and custom URL schemes."
