@@ -5,6 +5,7 @@
   (setf *failures* '())
   (objc-tests)
   (block-tests)
+  (main-thread-wait-checks)
   (application-tests (list #'window-checks #'webview-checks))
   (when *failures*
     (error "~D cl-iris test~:P failed: ~{~A~^, ~}"

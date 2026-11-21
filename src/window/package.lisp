@@ -9,6 +9,12 @@
   (:use #:cl #:cl-iris/objc)
   (:export #:main-thread-p
            #:on-main
+           #:on-main-deferred
+           #:main-thread-error
+           #:application-not-running
+           #:application-stopped
+           #:main-thread-timeout
+           #:application-running-p
            #:with-cocoa-float-traps
            #:run-application
            #:stop-application

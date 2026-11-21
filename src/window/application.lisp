@@ -21,17 +21,37 @@ ACTIVATION-POLICY is :REGULAR, :ACCESSORY (no Dock icon) or :PROHIBITED.
 Must be called on the main thread."
   (unless (main-thread-p)
     (error "RUN-APPLICATION must be called on the main thread."))
-  (with-cocoa-float-traps
-    (with-autorelease-pool
-      (let ((app (app)))
-        (send app "setActivationPolicy:"
-              :long (activation-policy-value activation-policy) :bool)
-        (when on-launch
-          (on-main on-launch :wait nil))
-        (send app "run" :void)))))
+  (sb-thread:with-mutex (*dispatch-lock*)
+    (when *running*
+      (error "The application loop is already running."))
+    (setf *running* t))
+  (unwind-protect
+       (with-cocoa-float-traps
+         (with-autorelease-pool
+           (let ((app (app)))
+             (send app "setActivationPolicy:"
+                   :long (activation-policy-value activation-policy) :bool)
+             (when on-launch
+               (on-main on-launch :wait nil))
+             (send app "run" :void))))
+    (sb-thread:with-mutex (*dispatch-lock*)
+      (setf *running* nil))
+    (wake-all-waiters)))
+
+(defun application-running-p ()
+  "True while RUN-APPLICATION is running the loop."
+  *running*)
 
 (defun stop-application ()
-  "Make RUN-APPLICATION return. Callable from any thread."
+  "Make RUN-APPLICATION return. Callable from any thread; does nothing when
+the loop is not running."
+  (when (application-running-p)
+    ;; The loop may end on its own while we ask it to; that is fine.
+    (handler-case (stop-loop)
+      (main-thread-error () nil)))
+  nil)
+
+(defun stop-loop ()
   (on-main
    (lambda ()
      (let ((app (app)))
@@ -50,5 +70,4 @@ Must be called on the main thread."
                             :long 0
                             :long 0)
              :bool t
-             :void))))
-  nil)
+             :void)))))

@@ -65,3 +65,61 @@ application. Give up and exit the process if it takes more than TIMEOUT seconds.
                        (stop-application)))
                    :name "cl-iris test worker")))
     (sb-thread:terminate-thread watchdog)))
+
+(defun main-thread-wait-checks ()
+  "Checks of waiting on the main thread around the loop's life. Called on the
+main thread, outside any application."
+  (check "waiting signals APPLICATION-NOT-RUNNING before the loop runs"
+         (let ((thread (sb-thread:make-thread
+                        (lambda ()
+                          (handler-case (progn (on-main (lambda () 1)) :ran)
+                            (application-not-running () :refused))))))
+           (eq :refused (sb-thread:join-thread thread))))
+  (let ((before (handle-count))
+        (stranded nil)
+        (never-ran t))
+    (run-application
+     :activation-policy :accessory
+     :on-launch
+     (lambda ()
+       (setf stranded
+             (sb-thread:make-thread
+              (lambda ()
+                (handler-case
+                    (progn (on-main-deferred (lambda (reply fail)
+                                               (declare (ignore reply fail))))
+                           :replied)
+                  (application-stopped () :woken)))))
+       (sb-thread:make-thread
+        (lambda ()
+          (check "a timeout withdraws work the main thread has not started"
+                 (progn
+                   (on-main (lambda () (sleep 0.5)) :wait nil)
+                   (handler-case (progn (on-main (lambda () (setf never-ran nil)) :timeout 0.1)
+                                        nil)
+                     (main-thread-timeout () (on-main (lambda () t))))))
+          (check "withdrawn work never runs"
+                 never-ran)
+          (check "on-main-deferred returns what the main thread replies later"
+                 (equal '(:a :b)
+                        (multiple-value-list
+                         (on-main-deferred
+                          (lambda (reply fail)
+                            (declare (ignore fail))
+                            (on-main (lambda () (funcall reply :a :b)) :wait nil))))))
+          (check "on-main-deferred signals what the main thread fails with"
+                 (handler-case (progn (on-main-deferred
+                                       (lambda (reply fail)
+                                         (declare (ignore reply))
+                                         (funcall fail (make-condition 'simple-error
+                                                                       :format-control "deferred boom"))))
+                                      nil)
+                   (error (e) (search "deferred boom" (princ-to-string e)))))
+          (sleep 0.2)
+          (stop-application)))))
+    (check "the loop's end wakes a stranded waiter"
+           (eq :woken (sb-thread:join-thread stranded)))
+    (check "stopping twice is harmless"
+           (null (stop-application)))
+    (check "waiting leaves no handles behind"
+           (= before (handle-count)))))
