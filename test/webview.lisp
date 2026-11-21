@@ -474,6 +474,22 @@ small page; return the port."
                            (progn (sleep 0.3)
                                   (equal "nav://start/" (eval-js other "location.href"))))))
         (destroy-webview other))
+      (let* ((events '())
+             (other (make-webview window
+                                  :on-request #'serve
+                                  :on-page-load (lambda (event url &optional message)
+                                                  (declare (ignore message))
+                                                  (push (list event url) events))
+                                  :url "iris://app/index.html")))
+        (check "on-page-load hears a page start and finish"
+               (wait-until (lambda ()
+                             (equal '((:finished "iris://app/index.html")
+                                      (:started "iris://app/index.html"))
+                                    (subseq events 0 (min 2 (length events)))))))
+        (check "on-page-load hears a load fail"
+               (progn (load-url other "https://cl-iris.invalid/")
+                      (wait-until (lambda () (eq :failed (first (first events)))))))
+        (destroy-webview other))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

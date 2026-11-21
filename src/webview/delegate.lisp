@@ -28,7 +28,23 @@
     (stop-task task))
   (:method "webView:decidePolicyForNavigationAction:decisionHandler:" :void
       (self (webview :pointer) (action :pointer) (decide :pointer))
-    (decide-navigation webview action decide)))
+    (decide-navigation webview action decide))
+  (:method "webView:didStartProvisionalNavigation:" :void
+      (self (webview :pointer) (navigation :pointer))
+    (declare (ignore navigation))
+    (page-load webview :started))
+  (:method "webView:didFinishNavigation:" :void
+      (self (webview :pointer) (navigation :pointer))
+    (declare (ignore navigation))
+    (page-load webview :finished))
+  (:method "webView:didFailProvisionalNavigation:withError:" :void
+      (self (webview :pointer) (navigation :pointer) (error :pointer))
+    (declare (ignore navigation))
+    (page-load webview :failed error))
+  (:method "webView:didFailNavigation:withError:" :void
+      (self (webview :pointer) (navigation :pointer) (error :pointer))
+    (declare (ignore navigation))
+    (page-load webview :failed error)))
 
 (defun delegate-class ()
   (find-class* "CLIrisWebViewDelegate"))

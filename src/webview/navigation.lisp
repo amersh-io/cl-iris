@@ -30,3 +30,11 @@ and true, or NIL and NIL when there is no handler or it signalled (reported)."
       (call-block decide :long (if (or (not handled) allow)
                                    +navigation-allow+
                                    +navigation-cancel+)))))
+
+;;; Loading
+
+(defun page-load (webview event &optional error)
+  "Tell WEBVIEW's :ON-PAGE-LOAD handler about EVENT for its current URL."
+  (apply #'call-handler webview :on-page-load "on-page-load"
+         event (url-string (send webview "URL"))
+         (when error (list (lisp-string (send error "localizedDescription"))))))

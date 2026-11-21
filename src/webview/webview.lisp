@@ -102,6 +102,8 @@ stay in memory, apart from other webviews. With JAVASCRIPT NIL, pages run no
 scripts of their own (EVAL-JS and init scripts still run).
 ON-NAVIGATE is called with the URL of each navigation before it happens,
 including the first load and links; it returns true to let it proceed.
+ON-PAGE-LOAD is called with :STARTED or :FINISHED and the URL as a page
+loads, or with :FAILED, the URL and an error message.
 
 With FOCUSED, it takes the keyboard focus. With ACCEPT-FIRST-MOUSE, a click on the webview of an
 inactive window reaches the page as well as activating the window.

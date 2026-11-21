@@ -26,7 +26,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_ipc_handler` | `:on-message` (`iris.post`), plus `:on-invoke` (`iris.invoke`, a Promise of the answer — wry has no reply) | done | "iris.post reaches on-message", "iris.invoke resolves with what on-invoke returns", "an asynchronous on-invoke answers later from another thread" |
 | `with_navigation_handler` | `:on-navigate` (allow or deny) | done | "on-navigate lets a navigation through", "on-navigate can refuse a navigation" |
 | `with_new_window_req_handler` | `:on-new-window` | planned | |
-| `with_on_page_load_handler` | `:on-page-load` (started, finished) | planned | |
+| `with_on_page_load_handler` | `:on-page-load` (started, finished, failed) | done | "on-page-load hears a page start and finish", "on-page-load hears a load fail" |
 | `with_document_title_changed_handler` | `:on-title-change` | planned | |
 | `with_drag_drop_handler` | `:on-drag-drop` | planned | |
 | `with_download_started_handler`, `with_download_completed_handler` | `:on-download` | planned | |
