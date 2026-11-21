@@ -53,6 +53,13 @@
                              "rectValue" (:struct ns-rect))))
              (equal '(1d0 2d0 30d0 40d0)
                     (list (rect-x rect) (rect-y rect) (rect-width rect) (rect-height rect)))))
+    (check "retain and release change the reference count"
+           (let* ((object (send (send (find-class* "NSObject") "alloc") "init"))
+                  (start (retain-count object)))
+             (retain object)
+             (prog1 (= (1+ start) (retain-count object))
+               (release object)
+               (release object))))
     (check "send with an integer return type"
            (= 5 (send (ns-string "hello") "length" :unsigned-long)))
     (let ((object (make-test-object)))
@@ -66,4 +73,4 @@
       (check "ensure-class returns the existing class"
              (cffi:pointer-eq (send object "class")
                               (ensure-class "CLIrisTestObject" "NSObject")))
-      (send object "release"))))
+      (release object))))

@@ -37,8 +37,8 @@ If URL is given, it is loaded."
                                (:struct ns-rect))
                          :pointer configuration)))
       ;; The configuration and its user content controller retain what they need.
-      (send configuration "release" :void)
-      (send delegate "release" :void)
+      (release configuration)
+      (release delegate)
       (setf (gethash (cffi:pointer-address webview) *routes*)
             (list :on-message on-message :on-request on-request))
       (send window "setContentView:" :pointer webview :void)
@@ -72,5 +72,5 @@ If URL is given, it is loaded."
            "removeScriptMessageHandlerForName:"
            :pointer (ns-string *message-handler-name*) :void)
      (send webview "removeFromSuperview" :void)
-     (send webview "release" :void)))
+     (release webview)))
   nil)

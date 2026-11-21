@@ -38,7 +38,7 @@ taking focus from other applications."
   (on-main
    (lambda ()
      (send window "close" :void)
-     (send window "release" :void)))
+     (release window)))
   nil)
 
 (defun window-number (window)

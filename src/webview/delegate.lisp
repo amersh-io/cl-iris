@@ -29,7 +29,7 @@
                          :pointer url :long status
                          :pointer (ns-string "HTTP/1.1") :pointer headers)))
     (send task "didReceiveResponse:" :pointer response :void)
-    (send response "release" :void)
+    (release response)
     (send task "didReceiveData:" :pointer (ns-data octets) :void)
     (send task "didFinish" :void)))
 

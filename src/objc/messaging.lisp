@@ -40,3 +40,23 @@ variadic function, which is what the arm64 calling convention requires."
 (defun kind-of-p (object class-name)
   "True if OBJECT is an instance of the class CLASS-NAME or of a subclass."
   (send object "isKindOfClass:" :pointer (find-class* class-name) :bool))
+
+;;; Reference counting (manual: cl-iris does not use ARC)
+
+(defun retain (object)
+  "Add a reference to OBJECT and return it."
+  (send object "retain"))
+
+(defun release (object)
+  "Drop a reference to OBJECT. Returns NIL."
+  (send object "release" :void)
+  nil)
+
+(defun autorelease (object)
+  "Drop a reference to OBJECT when the current autorelease pool drains.
+Returns OBJECT."
+  (send object "autorelease"))
+
+(defun retain-count (object)
+  "OBJECT's reference count, for tests and debugging only."
+  (send object "retainCount" :unsigned-long))

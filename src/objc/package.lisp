@@ -40,5 +40,9 @@
            #:ensure-class
            #:set-method
            #:add-protocol
+           #:retain
+           #:release
+           #:autorelease
+           #:retain-count
            #:responds-to-p
            #:kind-of-p))
