@@ -643,6 +643,36 @@ small page; return the port."
                           (progn (dismiss s 1001)
                                  (wait-until (lambda () (eq :null (eval-js other "window.typed"))))))))))
         (destroy-webview other))
+      (uiop:with-temporary-file (:pathname chosen :type "txt" :prefix "cl-iris-upload")
+        (with-open-file (out chosen :direction :output :if-exists :supersede)
+          (write-string "uploaded bytes" out))
+        (let* ((asked nil)
+               (other (make-webview
+                       window
+                       :html "<title>files</title><input id=f type=file multiple>"
+                       :on-file-dialog (lambda (&key multiple directories)
+                                         (setf asked (list multiple directories))
+                                         (list chosen)))))
+          (wait-until (lambda () (equal "files" (eval-js other "document.title"))))
+          (eval-js other "const f = document.getElementById('f'); f.onchange = async () => { window.picked = f.files[0].name + ':' + await f.files[0].text(); }; f.click(); 0")
+          (check "on-file-dialog chooses the files for an input"
+                 (wait-until (lambda () (equal (format nil "~A:uploaded bytes" (file-namestring chosen))
+                                               (eval-js other "window.picked || ''")))))
+          (check "on-file-dialog hears what the input accepts"
+                 (equal '(t nil) asked))
+          (destroy-webview other)))
+      (let ((other (make-webview window :html "<title>panel</title><input id=f type=file>")))
+        (wait-until (lambda () (equal "panel" (eval-js other "document.title"))))
+        (eval-js other "const f = document.getElementById('f'); f.addEventListener('cancel', () => window.cancelled = true); f.click(); 0")
+        (check "without on-file-dialog, an open panel sheet asks, and can be cancelled"
+               (let ((sheet (wait-until (lambda () (on-main (lambda () (let ((s (send window "attachedSheet")))
+                                                                         (unless (cffi:null-pointer-p s) s))))))))
+                 (and sheet
+                      (on-main (lambda () (kind-of-p sheet "NSOpenPanel")))
+                      (progn (on-main (lambda () (send window "endSheet:returnCode:"
+                                                       :pointer sheet :long 0 :void)))
+                             (wait-until (lambda () (eq t (eval-js other "window.cancelled || false"))))))))
+        (destroy-webview other))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

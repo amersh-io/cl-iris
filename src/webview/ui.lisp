@@ -108,3 +108,59 @@ block with a Lisp answer."
                (call-block block :pointer (if (stringp value)
                                               (ns-string value)
                                               (cffi:null-pointer))))))
+
+;;; <input type=file>
+;;;
+;;; WebKit asks for files with a completion handler, called once with an
+;;; array of file URLs, or nil if the user cancelled.
+
+(defun file-url-array (paths)
+  (let ((array (send (find-class* "NSMutableArray") "array")))
+    (dolist (path paths array)
+      (send array "addObject:"
+            :pointer (send (find-class* "NSURL") "fileURLWithPath:"
+                           :pointer (ns-string (namestring path)))
+            :void))))
+
+(defun url-paths (array)
+  (loop for i below (send array "count" :unsigned-long)
+        collect (lisp-string (send (send array "objectAtIndex:" :unsigned-long i) "path"))))
+
+(defun show-open-panel (webview multiple directories finish)
+  (let ((window (send webview "window")))
+    (if (cffi:null-pointer-p window)
+        (funcall finish nil)
+        (let ((panel (send (find-class* "NSOpenPanel") "openPanel")))
+          (send panel "setAllowsMultipleSelection:" :bool multiple :void)
+          (send panel "setCanChooseDirectories:" :bool directories :void)
+          (send panel "setCanChooseFiles:" :bool t :void)
+          (with-block (ended (cffi:callback sheet-ended)
+                             (lambda (response)
+                               (funcall finish (when (= response 1)
+                                                 (url-paths (send panel "URLs"))))))
+            (send panel "beginSheetModalForWindow:completionHandler:"
+                  :pointer window :pointer ended :void))))))
+
+(defun open-panel (webview parameters completion)
+  "Answer a page's request for files: from :ON-FILE-DIALOG, else an open panel."
+  (let ((completion (copy-block completion))
+        (multiple (send parameters "allowsMultipleSelection" :bool))
+        (directories (send parameters "allowsDirectories" :bool))
+        (done nil))
+    (flet ((finish (paths)
+             (unless done
+               (setf done t)
+               (unwind-protect
+                    (call-block completion :pointer (if paths
+                                                        (file-url-array paths)
+                                                        (cffi:null-pointer)))
+                 (release-block completion)))))
+      (if (route webview :on-file-dialog)
+          (multiple-value-bind (paths handled)
+              (call-handler webview :on-file-dialog "on-file-dialog"
+                            :multiple multiple :directories directories)
+            (finish (and handled paths)))
+          (handler-case (show-open-panel webview multiple directories #'finish)
+            (serious-condition (c)
+              (report-error "a file panel" c)
+              (finish nil)))))))

@@ -118,6 +118,10 @@ ON-DIALOG answers alert(), confirm() and prompt(): it is called with :ALERT,
 :CONFIRM or :PROMPT, the message and, for :PROMPT, the default text, and
 returns whether to confirm, or the text to answer. Without it, they are
 shown as sheets on the window.
+ON-FILE-DIALOG chooses files for <input type=file>: it is called with the
+keywords :MULTIPLE and :DIRECTORIES saying what the input accepts and
+returns a list of paths, or NIL to cancel. Without it, an open panel is
+shown as a sheet on the window.
 ON-PAGE-LOAD is called with :STARTED or :FINISHED and the URL as a page
 loads, or with :FAILED, the URL and an error message.
 ON-TITLE-CHANGE is called with the document's title whenever it changes.

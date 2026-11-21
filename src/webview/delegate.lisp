@@ -62,6 +62,10 @@
             (completion :pointer))
     (declare (ignore frame))
     (prompt-panel webview prompt default completion))
+  (:method "webView:runOpenPanelWithParameters:initiatedByFrame:completionHandler:" :void
+      (self (webview :pointer) (parameters :pointer) (frame :pointer) (completion :pointer))
+    (declare (ignore frame))
+    (open-panel webview parameters completion))
   (:method "webViewWebContentProcessDidTerminate:" :void (self (webview :pointer))
     (web-process-terminated webview))
   (:method "webView:didFailNavigation:withError:" :void
