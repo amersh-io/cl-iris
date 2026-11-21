@@ -63,4 +63,9 @@
            #:run-every
            #:cancel-timer
            #:timer-cancelled-p
-           #:quit-application))
+           #:quit-application
+           #:set-menu-bar
+           #:find-menu-item
+           #:menu-item-enabled-p
+           #:menu-item-checked-p
+           #:perform-menu-item))

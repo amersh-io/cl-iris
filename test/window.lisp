@@ -193,6 +193,7 @@ AppKit animates."
     (close-window window))
   (window-event-checks)
   (timer-checks)
+  (menu-checks)
   (let ((window (make-window :title "minimize and zoom" :width 300 :height 200 :activate nil)))
     (check "a window can be minimized and restored"
            (progn (minimize-window window)
@@ -264,6 +265,56 @@ AppKit animates."
                (setf *error-reporter* old))))
     (check "finished and cancelled timers leave no handles behind"
            (eventually (lambda () (= before (handle-count)))))))
+
+(defun menu-checks ()
+  (let ((chosen '()))
+    (set-menu-bar
+     `((:menu "App" (:item "Quit" :key "q" :selector "terminate:"))
+       (:menu "Tools"
+        (:item "Run" :key "r" :modifiers (:command :shift)
+               :action ,(lambda () (push :run chosen)))
+        (:item "Disabled" :action ,(lambda () (push :disabled chosen)) :enabled nil)
+        :separator
+        (:item "Option" :checked t :action ,(lambda () nil))
+        (:menu "More" (:item "Deep" :action ,(lambda () (push :deep chosen)))))))
+    (check "a menu item is found by its path of titles"
+           (and (find-menu-item "Tools" "Run")
+                (find-menu-item "Tools" "More" "Deep")
+                (null (find-menu-item "Tools" "Missing"))))
+    (check "a menu item has the key equivalent and modifiers it was given"
+           (let ((item (find-menu-item "Tools" "Run")))
+             (on-main (lambda ()
+                        (and (string= "r" (lisp-string (send item "keyEquivalent")))
+                             (= (logior (ash 1 17) (ash 1 20))
+                                (send item "keyEquivalentModifierMask" :unsigned-long)))))))
+    (check "choosing a menu item calls its Lisp action"
+           (progn (perform-menu-item (find-menu-item "Tools" "Run"))
+                  (perform-menu-item (find-menu-item "Tools" "More" "Deep"))
+                  (equal '(:deep :run) chosen)))
+    (check "an item made disabled is disabled, and can be enabled"
+           (let ((item (find-menu-item "Tools" "Disabled")))
+             (and (not (menu-item-enabled-p item))
+                  (progn (setf (menu-item-enabled-p item) t)
+                         (menu-item-enabled-p item)))))
+    (check "an item can be checked and unchecked"
+           (let ((item (find-menu-item "Tools" "Option")))
+             (and (menu-item-checked-p item)
+                  (progn (setf (menu-item-checked-p item) nil)
+                         (not (menu-item-checked-p item))))))
+    (check "a selector item is sent along the responder chain"
+           (on-main (lambda ()
+                      (let ((item (find-menu-item "App" "Quit")))
+                        (and (cffi:null-pointer-p (send item "target"))
+                             (cffi:pointer-eq (selector "terminate:") (send item "action")))))))
+    (check "a malformed menu is refused and the menu bar kept"
+           (and (handler-case (progn (set-menu-bar '((:menu "Bad" (:thing "x")))) nil)
+                  (error () t))
+                (find-menu-item "Tools" "Run")
+                (progn (perform-menu-item (find-menu-item "Tools" "Run"))
+                       (equal '(:run :deep :run) chosen))))
+    (check "replacing the menu bar forgets the old Lisp actions"
+           (progn (set-menu-bar '((:menu "App")))
+                  (zerop (on-main (lambda () (hash-table-count cl-iris/window::*menu-actions*))))))))
 
 (defun window-event-checks ()
   (let* ((events '())
