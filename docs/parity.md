@@ -35,7 +35,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_devtools` | `:devtools`, `(setf webview-devtools-p)` (Web Inspector via `isInspectable`) | done | "devtools makes a webview inspectable" |
 | `with_transparent` | `:transparent` | planned | |
 | `with_background_color` | `:background-color` | planned | |
-| `with_visible` | `:visible` | planned | |
+| `with_visible` | `:visible` | done | "a webview can start hidden and keep running its page" |
 | `with_focused` | `:focused` | planned | |
 | `with_bounds` | `:bounds` (child webview inside a window) | planned | |
 | `with_autoplay` | `:autoplay` | planned | |
@@ -64,7 +64,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `zoom` | `(setf webview-zoom)` | planned | |
 | `set_background_color` | `(setf webview-background-color)` | planned | |
 | `bounds`, `set_bounds` | `webview-bounds`, `(setf webview-bounds)` | planned | |
-| `set_visible` | `(setf webview-visible-p)` | planned | |
+| `set_visible` | `(setf webview-visible-p)` | done | "a hidden webview can be shown" |
 | `focus`, `focus_parent` | `focus-webview`, `focus-window` | planned | |
 | `print` | `print-webview` | planned | |
 | `cookies`, `cookies_for_url`, `set_cookie`, `delete_cookie` | `cookies`, `set-cookie`, `delete-cookie` | planned | |

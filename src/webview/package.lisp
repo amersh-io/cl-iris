@@ -15,6 +15,7 @@
            #:webview-user-agent
            #:webview-devtools-p
            #:webview-navigation-gestures-p
+           #:webview-visible-p
            #:eval-js
            #:javascript-error
            #:request

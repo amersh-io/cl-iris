@@ -299,6 +299,14 @@
                     (progn (setf (webview-navigation-gestures-p other) nil)
                            (not (webview-navigation-gestures-p other)))))
         (destroy-webview other))
+      (let ((other (make-webview window :visible nil :html "<title>hidden</title>")))
+        (check "a webview can start hidden and keep running its page"
+               (and (not (webview-visible-p other))
+                    (wait-until (lambda () (equal "hidden" (eval-js other "document.title"))))))
+        (check "a hidden webview can be shown"
+               (progn (setf (webview-visible-p other) t)
+                      (webview-visible-p other)))
+        (destroy-webview other))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

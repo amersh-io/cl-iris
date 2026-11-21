@@ -78,3 +78,15 @@ or Inspect Element in its context menu).")
     "allowsBackForwardNavigationGestures" "setAllowsBackForwardNavigationGestures:"
     :navigation-gestures
   "True if horizontal swipes on WEBVIEW go back and forward in its history.")
+
+(defun webview-visible-p (webview)
+  "True unless WEBVIEW has been hidden."
+  (on-main (lambda () (not (send webview "isHidden" :bool)))))
+
+(defun (setf webview-visible-p) (visible webview)
+  "Show or hide WEBVIEW; a hidden webview keeps running its page."
+  (on-main (lambda () (send webview "setHidden:" :bool (not visible) :void)))
+  visible)
+
+(define-view-option :visible (webview visible)
+  (send webview "setHidden:" :bool (not visible) :void))
