@@ -239,7 +239,7 @@ return its output and exit code."
                      (sb-thread:make-thread
                       (lambda ()
                         (unwind-protect
-                             (let* ((window (make-window :activate nil :width 200 :height 100))
+                             (let* ((window (make-window :activate nil :alpha 0 :width 200 :height 100))
                                     (webview (make-webview window)))
                                (setf result (eval-js webview \"6 * 7\"))
                                (destroy-webview webview)
