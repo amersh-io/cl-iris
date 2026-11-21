@@ -458,6 +458,22 @@ small page; return the port."
                            (handler-case (progn (setf (webview-bounds other) '(0 0 10 10)) nil)
                              (error (e) (search ":BOUNDS" (princ-to-string e)))))
                  (destroy-webview other))))
+      (let* ((asked '())
+             (other (make-webview window
+                                  :protocols (list (list "nav" (lambda (r) (format nil "<title>~A</title>" (request-url r)))))
+                                  :on-navigate (lambda (url)
+                                                 (push url asked)
+                                                 (not (search "blocked" url)))
+                                  :url "nav://start/")))
+        (check "on-navigate lets a navigation through"
+               (and (wait-until (lambda () (equal "nav://start/" (eval-js other "document.title"))))
+                    (member "nav://start/" asked :test #'equal)))
+        (check "on-navigate can refuse a navigation"
+               (progn (eval-js other "location.href = 'nav://blocked/'; 0")
+                      (and (wait-until (lambda () (member "nav://blocked/" asked :test #'equal)))
+                           (progn (sleep 0.3)
+                                  (equal "nav://start/" (eval-js other "location.href"))))))
+        (destroy-webview other))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

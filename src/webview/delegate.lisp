@@ -10,7 +10,7 @@
 
 (define-objc-class "CLIrisWebViewDelegate"
     (:protocols ("WKScriptMessageHandler" "WKScriptMessageHandlerWithReply"
-                 "WKURLSchemeHandler"))
+                 "WKURLSchemeHandler" "WKNavigationDelegate"))
   (:method "userContentController:didReceiveScriptMessage:" :void
       (self (controller :pointer) (message :pointer))
     (declare (ignore controller))
@@ -25,7 +25,10 @@
   (:method "webView:stopURLSchemeTask:" :void
       (self (webview :pointer) (task :pointer))
     (declare (ignore webview))
-    (stop-task task)))
+    (stop-task task))
+  (:method "webView:decidePolicyForNavigationAction:decisionHandler:" :void
+      (self (webview :pointer) (action :pointer) (decide :pointer))
+    (decide-navigation webview action decide)))
 
 (defun delegate-class ()
   (find-class* "CLIrisWebViewDelegate"))

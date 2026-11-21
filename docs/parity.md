@@ -24,7 +24,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_custom_protocol` | `:protocols` (or `:on-request` for one) | done | "fetch reaches the Lisp scheme handler", "one webview answers several schemes", "a request carries its method, headers and body" |
 | `with_asynchronous_custom_protocol` | `:protocols` entry with `:async t`, `respond` from any thread | done | "an asynchronous handler answers later from another thread", "an answer to a stopped request is dropped, not sent" |
 | `with_ipc_handler` | `:on-message` (`iris.post`), plus `:on-invoke` (`iris.invoke`, a Promise of the answer — wry has no reply) | done | "iris.post reaches on-message", "iris.invoke resolves with what on-invoke returns", "an asynchronous on-invoke answers later from another thread" |
-| `with_navigation_handler` | `:on-navigate` (allow or deny) | planned | |
+| `with_navigation_handler` | `:on-navigate` (allow or deny) | done | "on-navigate lets a navigation through", "on-navigate can refuse a navigation" |
 | `with_new_window_req_handler` | `:on-new-window` | planned | |
 | `with_on_page_load_handler` | `:on-page-load` (started, finished) | planned | |
 | `with_document_title_changed_handler` | `:on-title-change` | planned | |

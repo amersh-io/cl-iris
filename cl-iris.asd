@@ -57,6 +57,7 @@
                (:file "runtime")
                (:file "scheme")
                (:file "ipc")
+               (:file "navigation")
                (:file "delegate")
                (:file "options")
                (:file "webview")

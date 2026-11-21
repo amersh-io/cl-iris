@@ -100,6 +100,9 @@ With AUTOPLAY, media plays without waiting for a user gesture; with AUTOPLAY
 NIL, all media waits for one. With INCOGNITO, cookies, storage and caches
 stay in memory, apart from other webviews. With JAVASCRIPT NIL, pages run no
 scripts of their own (EVAL-JS and init scripts still run).
+ON-NAVIGATE is called with the URL of each navigation before it happens,
+including the first load and links; it returns true to let it proceed.
+
 With FOCUSED, it takes the keyboard focus. With ACCEPT-FIRST-MOUSE, a click on the webview of an
 inactive window reaches the page as well as activating the window.
 BACKGROUND-THROTTLING is :SUSPEND, :THROTTLE or :NONE: what happens to the
@@ -198,6 +201,9 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
                               (view-frame content bounds)
                               (send content "frame" (:struct ns-rect)))
                           :pointer configuration)))
+      ;; The user content controller keeps the delegate alive; the webview
+      ;; refers to it weakly, and DESTROY-WEBVIEW detaches it.
+      (send webview "setNavigationDelegate:" :pointer delegate :void)
       ;; The configuration and its user content controller retain what they need.
       (release configuration)
       (release delegate)
@@ -261,6 +267,7 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
              :pointer (ns-string *invoke-handler-name*)
              :pointer (send (find-class* "WKContentWorld") "pageWorld")
              :void))
+     (send webview "setNavigationDelegate:" :pointer (cffi:null-pointer) :void)
      (send webview "removeFromSuperview" :void)
      (release webview)))
   nil)
