@@ -95,8 +95,14 @@ NIL for 404), then optionally CONTENT-TYPE, STATUS and HEADERS (an alist)."
                      (or content-type "text/html; charset=utf-8")
                      headers (to-octets body))))
 
+(defun protocol-handler (webview task)
+  "The handler WEBVIEW has for the scheme of TASK's URL."
+  (let ((scheme (string-downcase
+                 (lisp-string (send (send (send task "request") "URL") "scheme")))))
+    (second (assoc scheme (route webview :protocols) :test #'string=))))
+
 (defun start-task (webview task)
-  (let ((handler (route webview :on-request))
+  (let ((handler (protocol-handler webview task))
         (request (task-request task)))
     (multiple-value-bind (body content-type status headers)
         (handler-case (and handler (funcall handler request))

@@ -4,32 +4,62 @@
 
 ;;; Webviews
 
-(defun make-webview (window &key on-message (scheme "iris") on-request url)
+(defun make-webview (window &rest options
+                     &key on-message (scheme "iris") on-request protocols url
+                     &allow-other-keys)
   "Fill WINDOW with a new WKWebView and return it.
 
 ON-MESSAGE is called on the main thread with each value a page posts to
-window.webkit.messageHandlers.iris (strings and numbers arrive as such).
+window.webkit.messageHandlers.iris, converted with OBJC->LISP.
 
-ON-REQUEST is called on the main thread with a REQUEST for each URL of
-SCHEME (e.g. \"iris://app/index.html\"). It returns the body, a string or a
-vector of octets, and optionally a content type (default text/html), a status
-(default 200) and further headers as an alist; returning NIL answers 404.
+PROTOCOLS lists custom URL schemes answered by Lisp, each as
+(SCHEME HANDLER). HANDLER is called on the main thread with a REQUEST for
+each URL of SCHEME (e.g. \"iris://app/index.html\"). It returns the body, a
+string or a vector of octets, and optionally a content type (default
+text/html), a status (default 200) and further headers as an alist;
+returning NIL answers 404. ON-REQUEST is shorthand for one protocol named
+SCHEME.
 
 If URL is given, it is loaded."
-  (let ((webview (on-main (lambda () (%make-webview window on-message scheme on-request)))))
+  (declare (ignore on-message))
+  (let* ((protocols (append (when on-request (list (list scheme on-request)))
+                            protocols))
+         (options (list* :protocols (normalize-protocols protocols)
+                         (remove-keys options :protocols :on-request :scheme)))
+         (webview (on-main (lambda () (%make-webview window options)))))
     (when url
       (load-url webview url))
     webview))
 
-(defun %make-webview (window on-message scheme on-request)
+(defun remove-keys (plist &rest keys)
+  (loop for (key value) on plist by #'cddr
+        unless (member key keys) collect key and collect value))
+
+(defun normalize-protocols (protocols)
+  "Check PROTOCOLS before WebKit sees them: WebKit raises an Objective-C
+exception, which would abort the process, for a scheme it handles itself or
+one registered twice."
+  (let ((seen '()))
+    (loop for (scheme handler) in protocols
+          for name = (string-downcase scheme)
+          do (when (member name seen :test #'string=)
+               (error "The URL scheme ~S is given twice." scheme))
+             (when (on-main (lambda ()
+                              (send (find-class* "WKWebView") "handlesURLScheme:"
+                                    :pointer (ns-string name) :bool)))
+               (error "WebKit handles the URL scheme ~S itself; choose another." scheme))
+             (push name seen)
+          collect (list name handler))))
+
+(defun %make-webview (window options)
   (let ((configuration (send (send (find-class* "WKWebViewConfiguration") "alloc") "init"))
         (delegate (send (send (delegate-class) "alloc") "init")))
     (send (send configuration "userContentController")
           "addScriptMessageHandler:name:"
           :pointer delegate :pointer (ns-string *message-handler-name*) :void)
-    (when on-request
-      (send configuration "setURLSchemeHandler:forURLScheme:"
-            :pointer delegate :pointer (ns-string scheme) :void))
+    (loop for (scheme) in (getf options :protocols)
+          do (send configuration "setURLSchemeHandler:forURLScheme:"
+                   :pointer delegate :pointer (ns-string scheme) :void))
     (let ((webview (send (send (find-class* "WKWebView") "alloc")
                          "initWithFrame:configuration:"
                          (:struct ns-rect)
@@ -39,8 +69,7 @@ If URL is given, it is loaded."
       ;; The configuration and its user content controller retain what they need.
       (release configuration)
       (release delegate)
-      (setf (gethash (cffi:pointer-address webview) *routes*)
-            (list :on-message on-message :on-request on-request))
+      (setf (gethash (cffi:pointer-address webview) *routes*) options)
       (send window "setContentView:" :pointer webview :void)
       webview)))
 

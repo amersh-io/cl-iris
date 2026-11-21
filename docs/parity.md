@@ -21,7 +21,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_html` | `make-webview :html` | planned | `load-html` exists |
 | `with_initialization_script` | `:init-scripts` | planned | |
 | `with_initialization_script_for_main_only` | `:init-scripts` with a main-frame flag | planned | |
-| `with_custom_protocol` | `:on-request` | done | "fetch reaches the Lisp scheme handler" |
+| `with_custom_protocol` | `:protocols` (or `:on-request` for one) | done | "fetch reaches the Lisp scheme handler", "one webview answers several schemes", "a request carries its method, headers and body" |
 | `with_asynchronous_custom_protocol` | responder callable from any thread | planned | |
 | `with_ipc_handler` | `:on-message` | done | "a message from JavaScript is answered by eval-js" |
 | `with_navigation_handler` | `:on-navigate` (allow or deny) | planned | |

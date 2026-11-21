@@ -96,6 +96,23 @@
                (wait-until (lambda () (received "echo|201|POST|yes|payload")))))
       (check "request headers are an alist"
              (equal "yes" (request-header *last-request* "X-TEST")))
+      (check "one webview answers several schemes"
+             (let ((other (make-webview window
+                                        :protocols (list (list "alpha" (lambda (r) (declare (ignore r)) "<title>a</title>"))
+                                                         (list "Beta" (lambda (r) (declare (ignore r)) "<title>b</title>"))))))
+               (prog1 (and (progn (load-url other "alpha://x/")
+                                  (wait-until (lambda () (equal "a" (eval-js other "document.title")))))
+                           (progn (load-url other "beta://x/")
+                                  (wait-until (lambda () (equal "b" (eval-js other "document.title"))))))
+                 (destroy-webview other))))
+      (check "a scheme WebKit handles itself is refused before WebKit sees it"
+             (handler-case (progn (make-webview window :protocols (list (list "https" #'serve))) nil)
+               (error (e) (search "itself" (princ-to-string e)))))
+      (check "a scheme given twice is refused"
+             (handler-case (progn (make-webview window :protocols (list (list "dup" #'serve)
+                                                                        (list "DUP" #'serve)))
+                                  nil)
+               (error (e) (search "twice" (princ-to-string e)))))
       (check "a handler given as a symbol follows its redefinition"
              (let* ((other (make-webview window :on-message 'late-bound-handler)))
                (load-html other "<script>window.webkit.messageHandlers.iris.postMessage('one')</script>")
