@@ -40,6 +40,7 @@
                (:file "application")
                (:file "color")
                (:file "attributes")
+               (:file "events")
                (:file "window")))
 
 (defsystem "cl-iris/webview"

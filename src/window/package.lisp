@@ -55,4 +55,7 @@
            #:window-transparent-p
            #:window-appearance
            #:window-title-visible-p
-           #:window-titlebar-transparent-p))
+           #:window-titlebar-transparent-p
+           #:window-event-handler
+           #:window-close-request-handler
+           #:window-closed-p))

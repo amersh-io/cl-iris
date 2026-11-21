@@ -191,6 +191,7 @@ AppKit animates."
     (check "make-window :decorations NIL leaves out the title bar"
            (not (window-decorated-p window)))
     (close-window window))
+  (window-event-checks)
   (let ((window (make-window :title "minimize and zoom" :width 300 :height 200 :activate nil)))
     (check "a window can be minimized and restored"
            (progn (minimize-window window)
@@ -214,6 +215,66 @@ AppKit animates."
   (check "an unknown style keyword is refused"
          (handler-case (progn (make-window :style '(:wobbly) :activate nil) nil)
            (error (e) (search "WOBBLY" (princ-to-string e))))))
+
+(defun window-event-checks ()
+  (let* ((events '())
+         (allow-close nil)
+         (window (make-window :title "events" :width 300 :height 200 :activate nil
+                              :on-event (lambda (window event &rest arguments)
+                                          (declare (ignore window))
+                                          (push (cons event arguments) events))
+                              :on-close-request (lambda (window)
+                                                  (declare (ignore window))
+                                                  allow-close))))
+    (flet ((seen (event) (find event events :key #'car))
+           (post (selector)
+             ;; Deliver a notification to the delegate as AppKit would.
+             (on-main (lambda ()
+                        (send (send window "delegate") selector
+                              :pointer (send (find-class* "NSNotification")
+                                             "notificationWithName:object:"
+                                             :pointer (ns-string "test") :pointer window)
+                              :void)))))
+      (check "resizing a window reports :resized with the new size"
+             (progn (resize-window window 320 210)
+                    (equal '(:resized 320d0 210d0) (seen :resized))))
+      (check "moving a window reports :moved with the new position"
+             (progn (move-window window 150 160)
+                    (equal '(:moved 150d0 160d0) (seen :moved))))
+      (check "gaining and losing focus are reported"
+             (progn (post "windowDidBecomeKey:")
+                    (post "windowDidResignKey:")
+                    (and (seen :focused) (seen :unfocused))))
+      (check "minimizing and restoring are reported"
+             (progn (minimize-window window)
+                    (and (eventually (lambda () (seen :minimized)))
+                         (progn (restore-window window)
+                                (eventually (lambda () (seen :restored)))))))
+      (check "a close request the handler refuses leaves the window open"
+             (progn (on-main (lambda () (send window "performClose:" :pointer (cffi:null-pointer) :void)))
+                    (and (window-visible-p window)
+                         (not (window-closed-p window))
+                         (not (seen :closed)))))
+      (check "a close request the handler allows closes the window"
+             (progn (setf allow-close t)
+                    (on-main (lambda () (send window "performClose:" :pointer (cffi:null-pointer) :void)))
+                    (and (window-closed-p window)
+                         (seen :closed))))
+      (check "close-window after the user closed a window only releases it"
+             (progn (close-window window)
+                    (= 1 (count :closed events :key #'car))))
+      (check "closing a window twice is harmless"
+             (null (close-window window)))))
+  (let* ((closed nil)
+         (window (make-window :title "closed by lisp" :activate nil
+                              :on-event (lambda (window event &rest arguments)
+                                          (declare (ignore window arguments))
+                                          (when (eq event :closed) (setf closed t))))))
+    (close-window window)
+    (check "close-window reports :closed"
+           closed)
+    (check "a window closed by close-window counts as closed"
+           (window-closed-p window))))
 
 (defun application-tests (checks &key (timeout 60))
   "Call each of CHECKS on a worker thread while this, the main thread, runs the

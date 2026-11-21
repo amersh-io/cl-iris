@@ -10,7 +10,7 @@
                       (style *default-style*) (resizable t) (decorations t)
                       center min-size max-size level alpha background-color
                       transparent appearance (title-visible t) titlebar-transparent
-                      (visible t) (activate t))
+                      on-event on-close-request (visible t) (activate t))
   "Open a window whose content area is WIDTH by HEIGHT points, with its
 bottom-left corner at X, Y on the screen (or CENTER-ed), and return it.
 
@@ -19,7 +19,9 @@ with all three buttons and can be resized, and NIL makes a borderless
 window. RESIZABLE NIL and DECORATIONS NIL take :RESIZABLE and :TITLED out of
 it. MIN-SIZE and MAX-SIZE are lists (width height). LEVEL, ALPHA,
 BACKGROUND-COLOR, TRANSPARENT, APPEARANCE, TITLE-VISIBLE and
-TITLEBAR-TRANSPARENT set what the WINDOW- accessors of the same names set.
+TITLEBAR-TRANSPARENT set what the WINDOW- accessors of the same names set,
+and ON-EVENT and ON-CLOSE-REQUEST what WINDOW-EVENT-HANDLER and
+WINDOW-CLOSE-REQUEST-HANDLER set.
 
 A VISIBLE window is shown at once; otherwise it waits for SHOW-WINDOW. With
 ACTIVATE, the application is brought to the front; without it, the window
@@ -44,6 +46,9 @@ opens without taking focus from other applications."
                                    :unsigned-char 0)))
                  ;; We release the window ourselves in CLOSE-WINDOW.
                  (send window "setReleasedWhenClosed:" :bool nil :void)
+                 (attach-delegate window)
+                 (when on-event (setf (window-event-handler window) on-event))
+                 (when on-close-request (setf (window-close-request-handler window) on-close-request))
                  (send window "setTitle:" :pointer (ns-string title) :void)
                  ;; On the main thread, so these setters run in place, before
                  ;; the window is first drawn.
@@ -65,11 +70,17 @@ opens without taking focus from other applications."
       window)))
 
 (defun close-window (window)
-  "Close WINDOW and release it."
+  "Close WINDOW, if the user has not already, and release it. Closing a
+window twice does nothing the second time."
   (on-main
    (lambda ()
-     (send window "close" :void)
-     (release window)))
+     (let ((record (window-record window)))
+       (when record
+         ;; Closing tells the handler :CLOSED before the delegate goes.
+         (unless (window-record-closed record)
+           (send window "close" :void))
+         (detach-delegate window)
+         (release window)))))
   nil)
 
 (defun window-number (window)
