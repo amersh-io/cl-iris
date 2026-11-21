@@ -3,7 +3,7 @@
 (defsystem "cl-iris"
   :description "Native windows and webviews for Common Lisp (macOS first)."
   :license "Apache-2.0"
-  :version "0.0.1"
+  :version "0.1.0"
   :homepage "https://github.com/amersh-io/cl-iris"
   :depends-on ("cl-iris/objc" "cl-iris/window" "cl-iris/webview")
   :pathname "src/"

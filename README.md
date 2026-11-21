@@ -266,6 +266,16 @@ scripts/check-spec                         # the Quint models' tests
 Test windows are transparent and never take focus, so the suite can run
 while you work. CI runs both suites on every push.
 
+## Versions
+
+Releases are tagged `vX.Y.Z` and follow semantic versioning; until 1.0 a
+minor release may change the API. See [CHANGELOG.md](CHANGELOG.md). To
+depend on a release with qlot:
+
+```
+git cl-iris https://github.com/amersh-io/cl-iris.git :tag v0.1.0
+```
+
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE). If you redistribute cl-iris
