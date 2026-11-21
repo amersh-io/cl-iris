@@ -714,8 +714,16 @@ small page; return the port."
                  (progn (wait-until (lambda () (equal "jar" (eval-js other "document.title"))))
                         (eval-js other "document.cookie = 'fromPage=1; path=/'; 0")
                         (wait-until (lambda () (named "fromPage" (cookies other))))))
+          (check "clear-browsing-data removes cookies and stored data"
+                 (progn (set-cookie other :name "crumb" :value "1" :domain "cl-iris.test")
+                        (eval-js other "localStorage.setItem('kept', 'yes'); 0")
+                        (clear-browsing-data other)
+                        (and (not (named "crumb" (cookies other)))
+                             (progn (load-html other "<title>jar</title>" :base-url "https://cl-iris.test/")
+                                    (wait-until (lambda () (eq :null (eval-js other "localStorage.getItem('kept')"))))))))
           (check "delete-cookie removes a cookie"
-                 (progn (delete-cookie other (named "flavor" (cookies other)))
+                 (progn (set-cookie other :name "flavor" :value "oat" :domain "cl-iris.test")
+                        (delete-cookie other (named "flavor" (cookies other)))
                         (not (named "flavor" (cookies other))))))
         (destroy-webview other))
       (check "webviews are not inspectable by default"

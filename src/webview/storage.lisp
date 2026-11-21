@@ -124,3 +124,22 @@ or NIL for a session cookie."
                      (list :name (getf cookie :name) :value (getf cookie :value)
                            :domain (getf cookie :domain) :path (or (getf cookie :path) "/")))
   nil)
+
+;;; All website data
+
+(defun clear-browsing-data (webview)
+  "Remove everything WEBVIEW's data store holds -- cookies, local storage,
+caches, databases -- and wait until it is gone. Every webview sharing the
+store (all but incognito ones, by default) loses it too."
+  (wait-on-main
+   "removeDataOfTypes:modifiedSince:completionHandler:"
+   (lambda (reply dropped)
+     (let ((block (make-block (cffi:callback finished) (lambda () (funcall reply t))
+                              :on-drop dropped)))
+       (send (data-store webview) "removeDataOfTypes:modifiedSince:completionHandler:"
+             :pointer (send (find-class* "WKWebsiteDataStore") "allWebsiteDataTypes")
+             :pointer (send (find-class* "NSDate") "distantPast")
+             :pointer block
+             :void)
+       (release-block block))))
+  nil)

@@ -37,6 +37,7 @@
            #:cookies
            #:set-cookie
            #:delete-cookie
+           #:clear-browsing-data
            #:eval-js
            #:javascript-error
            #:request
