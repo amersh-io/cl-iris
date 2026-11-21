@@ -168,6 +168,29 @@ AppKit animates."
                        (= (nth-value 3 (window-frame window))
                           (nth-value 1 (window-content-size window))))))
     (close-window window))
+  (let ((window (make-window :title "built" :width 320 :height 240 :activate nil
+                             :resizable nil :min-size '(100 80) :max-size '(640 480)
+                             :level :floating :alpha 0.9 :background-color "#102030"
+                             :appearance :dark :title-visible nil
+                             :titlebar-transparent t :center t)))
+    (check "make-window applies every option it is given"
+           (and (not (window-resizable-p window))
+                (equal '(100d0 80d0) (multiple-value-list (window-min-size window)))
+                (equal '(640d0 480d0) (multiple-value-list (window-max-size window)))
+                (eq :floating (window-level window))
+                (< (abs (- 0.9d0 (window-alpha window))) 1d-6)
+                (eq :dark (window-appearance window))
+                (not (window-title-visible-p window))
+                (window-titlebar-transparent-p window)
+                (window-visible-p window)))
+    (close-window window))
+  (let ((window (make-window :title "hidden" :visible nil :decorations nil)))
+    (check "make-window :visible NIL waits for show-window"
+           (and (not (window-visible-p window))
+                (progn (show-window window) (window-visible-p window))))
+    (check "make-window :decorations NIL leaves out the title bar"
+           (not (window-decorated-p window)))
+    (close-window window))
   (let ((window (make-window :title "minimize and zoom" :width 300 :height 200 :activate nil)))
     (check "a window can be minimized and restored"
            (progn (minimize-window window)
