@@ -39,6 +39,8 @@ With AUTOPLAY, media plays without waiting for a user gesture; with AUTOPLAY
 NIL, all media waits for one. With INCOGNITO, cookies, storage and caches
 stay in memory, apart from other webviews. With JAVASCRIPT NIL, pages run no
 scripts of their own (EVAL-JS and init scripts still run).
+BACKGROUND-THROTTLING is :SUSPEND, :THROTTLE or :NONE: what happens to the
+page while it is not visible (macOS 14 and later).
 
 INIT-SCRIPTS run at the start of every document, before the page's own
 scripts: each is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T).

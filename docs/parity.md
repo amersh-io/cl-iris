@@ -43,7 +43,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_javascript_disabled` | `:javascript nil` | done | "with javascript off, the page's scripts do not run" |
 | `with_back_forward_navigation_gestures` | `:navigation-gestures`, `(setf webview-navigation-gestures-p)` | done | "navigation gestures can be switched on and off" |
 | `with_accept_first_mouse` | `:accept-first-mouse` | planned | |
-| `with_background_throttling` | `:background-throttling` (macOS 14+) | planned | |
+| `with_background_throttling` | `:background-throttling` (macOS 14+) | done | "background throttling can be turned off" |
 | `with_proxy_config` | `:proxy` (macOS 14+) | planned | |
 | `with_hotkeys_zoom` | — | out of scope | unsupported by wry on macOS |
 | `with_clipboard` | the Edit menu (below) | out of scope | always on in WebKit on macOS; needs only the menu |

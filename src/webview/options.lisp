@@ -173,3 +173,27 @@ from every other webview, and forgets them when it goes."
 (define-configuration-option :javascript (configuration enabled)
   (send (send configuration "defaultWebpagePreferences")
         "setAllowsContentJavaScript:" :bool (and enabled t) :void))
+
+;;; Background throttling (macOS 14 and later)
+
+(defparameter *scheduling-policies* '((:suspend . 0) (:throttle . 1) (:none . 2))
+  "WKInactiveSchedulingPolicy values: what WebKit does with an inactive page.")
+
+(define-configuration-option :background-throttling (configuration policy)
+  (let ((preferences (send configuration "preferences"))
+        (value (or (cdr (assoc policy *scheduling-policies*))
+                   (error "Background throttling is one of ~{~S~^, ~}, not ~S."
+                          (mapcar #'car *scheduling-policies*) policy))))
+    (if (responds-to-p preferences "setInactiveSchedulingPolicy:")
+        (send preferences "setInactiveSchedulingPolicy:" :long value :void)
+        (warn "Background throttling needs macOS 14 or later; ignored."))))
+
+(defun webview-background-throttling (webview)
+  "What WebKit does with WEBVIEW's page while it is not visible: :SUSPEND it,
+:THROTTLE its timers, or :NONE. NIL before macOS 14."
+  (on-main
+   (lambda ()
+     (let ((preferences (send (configuration webview) "preferences")))
+       (when (responds-to-p preferences "inactiveSchedulingPolicy")
+         (car (rassoc (send preferences "inactiveSchedulingPolicy" :long)
+                      *scheduling-policies*)))))))

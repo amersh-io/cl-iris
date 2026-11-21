@@ -19,6 +19,7 @@
            #:webview-transparent-p
            #:webview-autoplay-p
            #:webview-incognito-p
+           #:webview-background-throttling
            #:eval-js
            #:javascript-error
            #:request

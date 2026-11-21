@@ -344,6 +344,13 @@
                (and (wait-until (lambda () (equal "static" (eval-js other "document.title"))))
                     (progn (sleep 0.2) (equal "static" (eval-js other "document.title")))))
         (destroy-webview other))
+      (let ((other (make-webview window :background-throttling :none)))
+        (check "background throttling can be turned off"
+               (eq :none (webview-background-throttling other)))
+        (destroy-webview other))
+      (check "an unknown background throttling policy is refused"
+             (handler-case (progn (make-webview window :background-throttling :sometimes) nil)
+               (error (e) (search "SOMETIMES" (princ-to-string e)))))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"
