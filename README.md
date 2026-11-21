@@ -4,8 +4,11 @@ Native windows and webviews for Common Lisp, macOS first.
 
 cl-iris aims to give a running SBCL process an AppKit window with a
 `WKWebView` inside it, and a two-way bridge between JavaScript and Lisp,
-using nothing but [CFFI](https://cffi.common-lisp.dev/). Everything can be
-redefined from the REPL while the window is open.
+using nothing but [CFFI](https://cffi.common-lisp.dev/). Methods of
+Objective-C classes declared in Lisp and the handlers of a webview can be
+redefined from the REPL while the window is open, and an image with cl-iris
+loaded can be saved with `save-lisp-and-die` and started again; the test
+suite checks both.
 
 > **Status:** early, but the three layers work end to end: a page served
 > from Lisp can message Lisp, and Lisp can answer it with JavaScript.
@@ -17,13 +20,14 @@ before it:
 
 | System           | What it does                                                        | State   |
 |------------------|---------------------------------------------------------------------|---------|
-| `cl-iris/objc`   | Objective-C runtime: classes, selectors, `objc_msgSend`, `NSString`, autorelease pools, classes defined at run time with Lisp methods | working |
+| `cl-iris/objc`   | Objective-C runtime: classes, selectors, `objc_msgSend`, structs by value, Foundation ⇄ Lisp values, blocks, classes declared with Lisp methods, integer handles, exception reports | working |
 | `cl-iris/window` | The `NSApplication` loop on the main thread, `NSWindow`, dispatching work to the main thread through GCD | working |
 | `cl-iris/webview`| `WKWebView`; JavaScript → Lisp messages (`WKScriptMessageHandler`), Lisp → JavaScript evaluation, custom URL schemes (`WKURLSchemeHandler`) | working |
 
-The only dependency is CFFI. `cl-iris/window` also uses `cffi-libffi`, which
-ships with CFFI and is needed to pass structs such as `NSRect` by value;
-building it needs a C compiler (the Xcode command line tools).
+The only dependency is CFFI, including `cffi-libffi`, which ships with CFFI
+and is needed to pass structs such as `NSRect` by value; building it needs a
+C compiler (the Xcode command line tools). See [docs/parity.md](docs/parity.md)
+for how cl-iris compares with wry and tao, row by row.
 
 ## Getting started
 
@@ -52,23 +56,39 @@ followed by the return type (default `:pointer`):
 (send (ns-string "hello") "length" :unsigned-long)   ; => 5
 ```
 
-A class can be created at run time and given methods written in Lisp:
+A class can be declared with methods written in Lisp:
 
 ```lisp
-(cffi:defcallback add-to :long-long
-    ((self :pointer) (cmd :pointer) (a :long-long) (b :long-long))
-  (declare (ignore self cmd))
-  (+ a b))
+(define-objc-class "Adder" (:superclass "NSObject")
+  (:method "add:to:" :long-long (self (a :long-long) (b :long-long))
+    (+ a b)))
 
-(let ((class (ensure-class "Adder" "NSObject")))
-  (set-method class "add:to:" (cffi:callback add-to) "q@:qq")
-  (send (send (send class "alloc") "init")
-        "add:to:" :long-long 2 :long-long 40 :long-long))
+(send (send (send (find-class* "Adder") "alloc") "init")
+      "add:to:" :long-long 2 :long-long 40 :long-long)
 ;; => 42
 ```
 
-`set-method` replaces an existing implementation, so a method can be
-redefined while objects of that class are alive.
+Evaluating the form again replaces the methods of the live class, and each
+method body is an ordinary function (here named `|Adder add:to:|`), so
+redefining it changes the method too.
+
+Foundation values convert to Lisp and back following JSON — strings,
+numbers, `T`/`NIL` for booleans, `:null`, vectors and `equal` hash tables —
+with `objc->lisp` and `lisp->objc`. Blocks are made from Lisp functions:
+
+```lisp
+(define-block-invoker each-object :void
+  ((object :pointer) (index :unsigned-long) (stop :pointer)))
+
+(with-block (block (cffi:callback each-object)
+                   (lambda (object index stop)
+                     (declare (ignore stop))
+                     (format t "~D: ~A~%" index (lisp-string object))))
+  (send (lisp->objc #("a" "b")) "enumerateObjectsUsingBlock:" :pointer block :void))
+```
+
+A block is reference-counted by the Objective-C runtime; the Lisp function
+stays reachable exactly as long as some copy of the block does.
 
 ### Windows
 
@@ -93,6 +113,12 @@ so they work from any thread — a REPL thread, for instance:
 ```
 
 An error inside `on-main` is signalled again in the thread that called it.
+A waiting caller is never left hanging: it gets `application-not-running`
+when the loop is not running, `application-stopped` when the loop ends
+first, and `main-thread-timeout` after `:timeout` seconds. For work that
+finishes later, in a completion handler, `on-main-deferred` waits for a
+reply. `:activation-policy :accessory` runs without a Dock icon, and
+`make-window :activate nil` opens a window without taking focus.
 
 ### Webviews
 
@@ -120,10 +146,14 @@ An error inside `on-main` is signalled again in the thread that called it.
 
 - `on-request` returns a string or octets and, optionally, a content type;
   `nil` answers 404. `fetch()` from the page reaches it too.
-- `eval-js` waits for the result and converts strings and numbers; a
+- Messages and `eval-js` results convert like other Foundation values, so
+  a page can post objects and arrays.
+- `eval-js` waits for the result (with an optional `:timeout`); a
   JavaScript exception becomes a `javascript-error`. It cannot wait on the
   main thread (which must run the script) — there, pass `:wait nil` and a
   `:callback`.
+- A handler given as a symbol, `:on-message 'my-handler`, follows
+  redefinitions of `my-handler`.
 
 ## Notes
 
@@ -133,10 +163,14 @@ An error inside `on-main` is signalled again in the thread that called it.
 - SBCL's floating point traps are masked around everything that runs on the
   main thread (`with-cocoa-float-traps`); Cocoa does not expect them.
 - Classes and selectors are looked up by name each time rather than cached
-  as pointers, so an image saved with `save-lisp-and-die` carries no stale
-  addresses.
-- An Objective-C exception that unwinds through Lisp frames will crash the
-  process; nothing catches them yet.
+  as pointers, foreign caches are emptied when an image starts, and classes
+  declared with `define-objc-class` are declared again, so an image saved
+  with `save-lisp-and-die` carries no stale addresses.
+- Errors in Lisp code called from Objective-C never unwind into C: they go to
+  `report-error`, which calls `*error-reporter*` (printing by default).
+- CFFI cannot catch an Objective-C exception, so one that reaches Lisp ends
+  the process. `run-application` installs a reporter that prints the
+  exception and the Lisp backtrace that led to it first.
 
 ## License
 

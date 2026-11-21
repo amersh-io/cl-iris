@@ -106,5 +106,5 @@ Status: **done** (with the test that covers it), **planned**, or
 | links with `target=_blank` | routed to `:on-new-window` or opened in place | planned | |
 | `<input type=file>` | open panel | planned | |
 | web content process crash | `:on-web-process-terminated`, reload | planned | |
-| Objective-C exceptions | reported before the process aborts | planned | |
-| tests that never steal focus | `:activation-policy :accessory`, `:activate nil` | planned | |
+| Objective-C exceptions | reported before the process aborts | done | "an uncaught exception is reported with its name and reason" |
+| tests that never steal focus | `:activation-policy :accessory`, `:activate nil` | done | every application test |
