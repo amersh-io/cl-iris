@@ -47,6 +47,22 @@ height) in points from the top-left corner of the content area."
        (send webview "setFrame:" (:struct ns-rect) (view-frame superview bounds) :void))))
   bounds)
 
+(defun focus-webview (webview)
+  "Give WEBVIEW the keyboard focus within its window."
+  (on-main (lambda () (send (send webview "window") "makeFirstResponder:" :pointer webview :bool))))
+
+(defun webview-focused-p (webview)
+  "True if WEBVIEW, or a view inside it, has its window's keyboard focus."
+  (on-main
+   (lambda ()
+     (let* ((window (send webview "window"))
+            (responder (if (cffi:null-pointer-p window)
+                           (cffi:null-pointer)
+                           (send window "firstResponder"))))
+       (and (not (cffi:null-pointer-p responder))
+            (kind-of-p responder "NSView")
+            (send responder "isDescendantOf:" :pointer webview :bool))))))
+
 (defun make-webview (window &rest options
                      &key on-message (scheme "iris") on-request protocols url headers html
                        (base-url "about:blank")
@@ -84,7 +100,7 @@ With AUTOPLAY, media plays without waiting for a user gesture; with AUTOPLAY
 NIL, all media waits for one. With INCOGNITO, cookies, storage and caches
 stay in memory, apart from other webviews. With JAVASCRIPT NIL, pages run no
 scripts of their own (EVAL-JS and init scripts still run).
-With ACCEPT-FIRST-MOUSE, a click on the webview of an
+With FOCUSED, it takes the keyboard focus. With ACCEPT-FIRST-MOUSE, a click on the webview of an
 inactive window reaches the page as well as activating the window.
 BACKGROUND-THROTTLING is :SUSPEND, :THROTTLE or :NONE: what happens to the
 page while it is not visible (macOS 14 and later). PROXY, (:HTTP host port)
@@ -192,6 +208,8 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
              (send webview "setAutoresizingMask:" :unsigned-long +view-min-y-margin+ :void)
              (send content "addSubview:" :pointer webview :void))
             (t (send window "setContentView:" :pointer webview :void)))
+      (when (getf options :focused)
+        (send window "makeFirstResponder:" :pointer webview :bool))
       webview)))
 
 (defun ns-url (url)

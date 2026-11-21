@@ -435,6 +435,15 @@ small page; return the port."
                     (wait-until (lambda () (and (equal "left" (eval-js left "document.title"))
                                                 (equal "right" (eval-js right "document.title")))))
                     (eql 400 (eval-js right "window.innerWidth"))))
+        (check "focus moves between webviews"
+               (and (progn (focus-webview left)
+                           (and (webview-focused-p left) (not (webview-focused-p right))))
+                    (progn (focus-webview right)
+                           (and (webview-focused-p right) (not (webview-focused-p left))))))
+        (check "a webview made with :focused takes the focus"
+               (let ((third (make-webview panes :bounds '(0 0 10 10) :focused t)))
+                 (prog1 (and (webview-focused-p third) (not (webview-focused-p right)))
+                   (destroy-webview third))))
         (check "a webview can be moved and resized"
                (progn (setf (webview-bounds right) '(250 0 300 200))
                       (and (equal '(250d0 0d0 300d0 200d0) (webview-bounds right))

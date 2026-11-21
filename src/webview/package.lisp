@@ -23,6 +23,8 @@
            #:webview-proxy-count
            #:webview-accepts-first-mouse-p
            #:webview-bounds
+           #:focus-webview
+           #:webview-focused-p
            #:eval-js
            #:javascript-error
            #:request

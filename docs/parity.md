@@ -36,7 +36,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_transparent` | `:transparent`, `(setf webview-transparent-p)` | done | "a transparent webview draws no background" |
 | `with_background_color` | `:background-color` | planned | |
 | `with_visible` | `:visible` | done | "a webview can start hidden and keep running its page" |
-| `with_focused` | `:focused` | planned | |
+| `with_focused` | `:focused` | done | "a webview made with :focused takes the focus" |
 | `with_bounds` | `:bounds` (child webview inside a window) | done | "several webviews share one window, each in its bounds" |
 | `with_autoplay` | `:autoplay` | done | "autoplay lets media start without a gesture" |
 | `with_incognito` | `:incognito` (non-persistent data store) | done | "incognito webviews do not share storage" |
@@ -65,7 +65,8 @@ Status: **done** (with the test that covers it), **planned**, or
 | `set_background_color` | `(setf webview-background-color)` | planned | |
 | `bounds`, `set_bounds` | `webview-bounds`, `(setf webview-bounds)` | done | "a webview can be moved and resized" |
 | `set_visible` | `(setf webview-visible-p)` | done | "a hidden webview can be shown" |
-| `focus`, `focus_parent` | `focus-webview`, `focus-window` | planned | |
+| `focus` | `focus-webview`, `webview-focused-p` | done | "focus moves between webviews" |
+| `focus_parent` | `focus-window` (window layer) | planned | |
 | `print` | `print-webview` | planned | |
 | `cookies`, `cookies_for_url`, `set_cookie`, `delete_cookie` | `cookies`, `set-cookie`, `delete-cookie` | planned | |
 | `clear_all_browsing_data` | `clear-browsing-data` | planned | |
