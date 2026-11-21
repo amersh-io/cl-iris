@@ -75,8 +75,8 @@ taken from *WINDOW-DEFAULTS* first."
                  (send window "setTitle:" :pointer (ns-string title) :void)
                  ;; On the main thread, so these setters run in place, before
                  ;; the window is first drawn.
-                 (when min-size (apply #'set-window-min-size window min-size))
-                 (when max-size (apply #'set-window-max-size window max-size))
+                 (when min-size (setf (window-min-size window) min-size))
+                 (when max-size (setf (window-max-size window) max-size))
                  (when level (setf (window-level window) level))
                  (when alpha (setf (window-alpha window) alpha))
                  (when transparent (setf (window-transparent-p window) t))
@@ -111,11 +111,5 @@ window twice does nothing the second time."
   (on-window window (lambda () (send window "windowNumber" :long))))
 
 (defun window-title (window)
+  "WINDOW's title. SETF it to change the title."
   (on-window window (lambda () (lisp-string (send window "title")))))
-
-(defun window-content-size (window)
-  "Return the width and height of WINDOW's content area, in points."
-  (on-window window
-   (lambda ()
-     (let ((frame (send (send window "contentView") "frame" (:struct ns-rect))))
-       (values (rect-width frame) (rect-height frame))))))

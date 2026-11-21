@@ -1,8 +1,9 @@
 ;;;; Reading and changing a window's attributes.
 ;;;;
-;;;; Positions and sizes are in points, in the screen's coordinates: the
-;;;; origin is the bottom-left corner of the main screen and Y grows upwards,
-;;;; as everywhere in AppKit.
+;;;; Every attribute is read by a function and changed with SETF on it. A size
+;;;; is a list (width height), a position (x y), a frame (x y width height),
+;;;; all in points, in the screen's coordinates: the origin is the bottom-left
+;;;; corner of the main screen and Y grows upwards, as everywhere in AppKit.
 
 (in-package #:cl-iris/window)
 
@@ -10,33 +11,55 @@
   (on-window window (lambda () (send window "setTitle:" :pointer (ns-string title) :void)))
   title)
 
-(defun resize-window (window width height)
-  "Make WINDOW's content area WIDTH by HEIGHT points, keeping its bottom-left
-corner in place."
+(defun check-pair (value what)
+  "Signal an error unless VALUE is a list of two reals."
+  (unless (and (listp value) (= 2 (length value)) (every #'realp value))
+    (error "~@(~A~) is a list of two numbers, not ~S." what value)))
+
+(defun window-size (window)
+  "The width and height of WINDOW's content area, as a list (width height)
+in points. SETF it to resize the window, keeping its bottom-left corner in
+place."
   (on-window window
    (lambda ()
-     (send window "setContentSize:" (:struct ns-size) (make-size width height) :void)))
-  nil)
+     (let ((frame (send (send window "contentView") "frame" (:struct ns-rect))))
+       (list (rect-width frame) (rect-height frame))))))
+
+(defun (setf window-size) (size window)
+  (check-pair size "a size")
+  (on-window window
+   (lambda ()
+     (send window "setContentSize:" (:struct ns-size) (apply #'make-size size) :void)))
+  size)
 
 (defun window-frame (window)
-  "Return the X, Y, width and height of WINDOW's whole frame, title bar
-included."
+  "WINDOW's whole frame, title bar included, as a list (x y width height)
+in points. SETF it to move and resize the frame at once."
   (on-window window
    (lambda ()
      (let ((frame (send window "frame" (:struct ns-rect))))
-       (values (rect-x frame) (rect-y frame) (rect-width frame) (rect-height frame))))))
+       (list (rect-x frame) (rect-y frame) (rect-width frame) (rect-height frame))))))
 
-(defun window-position (window)
-  "Return the X and Y of WINDOW's bottom-left corner."
-  (multiple-value-bind (x y) (window-frame window)
-    (values x y)))
-
-(defun move-window (window x y)
-  "Put WINDOW's bottom-left corner at X, Y."
+(defun (setf window-frame) (frame window)
+  (unless (and (listp frame) (= 4 (length frame)) (every #'realp frame))
+    (error "A frame is a list (x y width height), not ~S." frame))
   (on-window window
    (lambda ()
-     (send window "setFrameOrigin:" (:struct ns-point) (make-point x y) :void)))
-  nil)
+     (send window "setFrame:display:" (:struct ns-rect) (apply #'make-rect frame)
+           :unsigned-char 1 :void)))
+  frame)
+
+(defun window-position (window)
+  "The position of WINDOW's bottom-left corner, as a list (x y) in points.
+SETF it to move the window."
+  (subseq (window-frame window) 0 2))
+
+(defun (setf window-position) (position window)
+  (check-pair position "a position")
+  (on-window window
+   (lambda ()
+     (send window "setFrameOrigin:" (:struct ns-point) (apply #'make-point position) :void)))
+  position)
 
 (defun center-window (window)
   "Put WINDOW in the middle of its screen, a little above center as macOS
@@ -44,32 +67,35 @@ places new windows."
   (on-window window (lambda () (send window "center" :void)))
   nil)
 
-(defun size-values (size)
-  (values (size-width size) (size-height size)))
-
 (defun window-min-size (window)
-  "Return the smallest width and height the user can resize WINDOW's content
-area to."
-  (on-window window (lambda () (size-values (send window "contentMinSize" (:struct ns-size))))))
-
-(defun set-window-min-size (window width height)
-  "Keep the user from resizing WINDOW's content area below WIDTH by HEIGHT."
+  "The smallest content size the user can resize WINDOW to, as a list (width
+height). SETF it to change that."
   (on-window window
    (lambda ()
-     (send window "setContentMinSize:" (:struct ns-size) (make-size width height) :void)))
-  nil)
+     (let ((size (send window "contentMinSize" (:struct ns-size))))
+       (list (size-width size) (size-height size))))))
+
+(defun (setf window-min-size) (size window)
+  (check-pair size "a size")
+  (on-window window
+   (lambda ()
+     (send window "setContentMinSize:" (:struct ns-size) (apply #'make-size size) :void)))
+  size)
 
 (defun window-max-size (window)
-  "Return the largest width and height the user can resize WINDOW's content
-area to."
-  (on-window window (lambda () (size-values (send window "contentMaxSize" (:struct ns-size))))))
-
-(defun set-window-max-size (window width height)
-  "Keep the user from resizing WINDOW's content area beyond WIDTH by HEIGHT."
+  "The largest content size the user can resize WINDOW to, as a list (width
+height). SETF it to change that."
   (on-window window
    (lambda ()
-     (send window "setContentMaxSize:" (:struct ns-size) (make-size width height) :void)))
-  nil)
+     (let ((size (send window "contentMaxSize" (:struct ns-size))))
+       (list (size-width size) (size-height size))))))
+
+(defun (setf window-max-size) (size window)
+  (check-pair size "a size")
+  (on-window window
+   (lambda ()
+     (send window "setContentMaxSize:" (:struct ns-size) (apply #'make-size size) :void)))
+  size)
 
 ;;; Style: the title bar, its buttons, and whether the user can resize.
 

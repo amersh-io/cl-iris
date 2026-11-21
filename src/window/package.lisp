@@ -26,16 +26,12 @@
            #:close-window
            #:window-number
            #:window-title
-           #:window-content-size
-           #:resize-window
+           #:window-size
            #:window-frame
            #:window-position
-           #:move-window
            #:center-window
            #:window-min-size
-           #:set-window-min-size
            #:window-max-size
-           #:set-window-max-size
            #:window-style
            #:window-resizable-p
            #:window-decorated-p

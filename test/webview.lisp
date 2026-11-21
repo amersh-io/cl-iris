@@ -520,7 +520,7 @@ proxy -- with what RESPOND returns for its request line; return the port."
         (close-window panes))
       (check "a webview without bounds fills its window"
              (let ((other (make-webview window)))
-               (prog1 (and (multiple-value-bind (width height) (window-content-size window)
+               (prog1 (and (destructuring-bind (width height) (window-size window)
                              (equal (list 0d0 0d0 width height) (webview-bounds other)))
                            (handler-case (progn (setf (webview-bounds other) '(0 0 10 10)) nil)
                              (error (e) (search ":BOUNDS" (princ-to-string e)))))
@@ -627,11 +627,11 @@ proxy -- with what RESPOND returns for its request line; return the port."
         (check "zoom scales the page's CSS pixels"
                (and (wait-until (lambda () (equal "zoom" (eval-js other "document.title"))))
                     (= 2 (webview-zoom other))
-                    (multiple-value-bind (width) (window-content-size window)
+                    (let ((width (first (window-size window))))
                       (eql (round width 2) (eval-js other "window.innerWidth")))))
         (check "zoom can change on a live webview"
                (progn (setf (webview-zoom other) 1)
-                      (multiple-value-bind (width) (window-content-size window)
+                      (let ((width (first (window-size window))))
                         (wait-until (lambda () (eql (round width) (eval-js other "window.innerWidth")))))))
         (check "a zoom that is not a positive number is refused"
                (handler-case (progn (setf (webview-zoom other) 0) nil)
@@ -825,7 +825,7 @@ proxy -- with what RESPOND returns for its request line; return the port."
                                                          ;; Take every event: passing the
                                                          ;; stand-in on to WebKit would fail.
                                                          t))))
-        (multiple-value-bind (width height) (window-content-size window)
+        (destructuring-bind (width height) (window-size window)
           (declare (ignore width))
           (let ((info (on-main (lambda () (test-dragging-info (list "/tmp/one.txt")))))
                 (reader (fdefinition 'cl-iris/webview::dragging-location)))

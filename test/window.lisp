@@ -49,23 +49,31 @@ AppKit animates."
     (check "a window keeps its title"
            (string= "cl-iris test" (window-title window)))
     (check "a window has the content size asked for"
-           (equal '(640d0 400d0) (multiple-value-list (window-content-size window))))
+           (equal '(640d0 400d0) (window-size window)))
     (check "a window's title can be changed"
            (progn (setf (window-title window) "renamed")
                   (string= "renamed" (window-title window))))
     (check "a window can be resized"
-           (progn (resize-window window 500 300)
-                  (equal '(500d0 300d0) (multiple-value-list (window-content-size window)))))
+           (progn (setf (window-size window) '(500 300))
+                  (equal '(500d0 300d0) (window-size window))))
     (check "a window can be moved"
-           (progn (move-window window 120 140)
-                  (equal '(120d0 140d0) (multiple-value-list (window-position window)))))
+           (progn (setf (window-position window) '(120 140))
+                  (equal '(120d0 140d0) (window-position window))))
+    (check "a frame can be set as a whole and read back"
+           (let ((frame (window-frame window)))
+             (setf (window-frame window) (list 100 120 520 360))
+             (prog1 (equal '(100d0 120d0 520d0 360d0) (window-frame window))
+               (setf (window-frame window) frame))))
+    (check "a size must be a list of two numbers"
+           (handler-case (progn (setf (window-size window) 500) nil)
+             (error () t)))
     (check "the frame includes the title bar"
-           (multiple-value-bind (x y width height) (window-frame window)
+           (destructuring-bind (x y width height) (window-frame window)
              (declare (ignore x y))
              (and (= width 500) (> height 300))))
     (check "centering moves a window into the middle of its screen"
            (progn (center-window window)
-                  (let ((x (window-position window)))
+                  (let ((x (first (window-position window))))
                     (multiple-value-bind (sx sy screen-width)
                         (on-main (lambda ()
                                    (let ((frame (send (send window "screen") "visibleFrame"
@@ -74,10 +82,10 @@ AppKit animates."
                       (declare (ignore sy))
                       (< (abs (- (+ x 250) (+ sx (/ screen-width 2)))) 2)))))
     (check "a window keeps the minimum and maximum sizes it is given"
-           (progn (set-window-min-size window 300 200)
-                  (set-window-max-size window 900 700)
-                  (and (equal '(300d0 200d0) (multiple-value-list (window-min-size window)))
-                       (equal '(900d0 700d0) (multiple-value-list (window-max-size window))))))
+           (progn (setf (window-min-size window) '(300 200)
+                        (window-max-size window) '(900 700))
+                  (and (equal '(300d0 200d0) (window-min-size window))
+                       (equal '(900d0 700d0) (window-max-size window)))))
     (check "a new window has the default style"
            (equal '(:titled :closable :miniaturizable :resizable) (window-style window)))
     (check "a window can be made fixed in size"
@@ -86,10 +94,8 @@ AppKit animates."
                        (not (member :resizable (window-style window))))))
     (check "a window without decorations has no title bar"
            (progn (setf (window-decorated-p window) nil)
-                  (multiple-value-bind (x y width height) (window-frame window)
-                    (declare (ignore x y width))
-                    (and (not (window-decorated-p window))
-                         (= height (nth-value 1 (window-content-size window)))))))
+                  (and (not (window-decorated-p window))
+                       (= (fourth (window-frame window)) (second (window-size window))))))
     (check "a window starts at the normal level"
            (eq :normal (window-level window)))
     (check "a window can be kept on top"
@@ -192,8 +198,7 @@ AppKit animates."
                         (window-titlebar-transparent-p window) t)
                   (and (window-titlebar-transparent-p window)
                        ;; The content now fills the frame, under the title bar.
-                       (= (nth-value 3 (window-frame window))
-                          (nth-value 1 (window-content-size window))))))
+                       (= (fourth (window-frame window)) (second (window-size window))))))
     (close-window window))
   (let ((window (make-window :title "built" :width 320 :height 240 :activate nil
                              :resizable nil :min-size '(100 80) :max-size '(640 480)
@@ -202,8 +207,8 @@ AppKit animates."
                              :titlebar-transparent t :center t)))
     (check "make-window applies every option it is given"
            (and (not (window-resizable-p window))
-                (equal '(100d0 80d0) (multiple-value-list (window-min-size window)))
-                (equal '(640d0 480d0) (multiple-value-list (window-max-size window)))
+                (equal '(100d0 80d0) (window-min-size window))
+                (equal '(640d0 480d0) (window-max-size window))
                 (eq :floating (window-level window))
                 (< (abs (- 0.9d0 (window-alpha window))) 1d-6)
                 (eq :dark (window-appearance window))
@@ -459,10 +464,10 @@ replaces it."
                                              :pointer (ns-string "test") :pointer window)
                               :void)))))
       (check "resizing a window reports :resized with the new size"
-             (progn (resize-window window 320 210)
+             (progn (setf (window-size window) '(320 210))
                     (equal '(:resized 320d0 210d0) (seen :resized))))
       (check "moving a window reports :moved with the new position"
-             (progn (move-window window 150 160)
+             (progn (setf (window-position window) '(150 160))
                     (equal '(:moved 150d0 160d0) (seen :moved))))
       (check "handlers are given the WINDOW object, not its NSWindow"
              (and handed (every (lambda (w) (eq w window)) handed)))

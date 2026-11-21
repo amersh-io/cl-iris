@@ -82,10 +82,10 @@ Status: **done** (with the test that covers it), **planned**, or
 | exit the loop | `stop-application` | done | every application test |
 | create a window | `make-window` | done | "a window gets a window number" |
 | title | `window-title`, `(setf window-title)` | done | "a window's title can be changed" |
-| inner size | `window-content-size`, `resize-window` | done | "a window can be resized" |
-| outer size and position | `window-frame`, `window-position`, `move-window` | done | "a window can be moved", "the frame includes the title bar" |
+| inner size | `window-size` and its `setf` | done | "a window can be resized" |
+| outer size and position | `window-frame`, `window-position` and their `setf` | done | "a window can be moved", "the frame includes the title bar" |
 | center | `center-window`, `make-window :center` | done | "centering moves a window into the middle of its screen" |
-| min and max size | `set-window-min-size`, `set-window-max-size`, `:min-size`, `:max-size` | done | "a window keeps the minimum and maximum sizes it is given" |
+| min and max size | `(setf window-min-size)`, `(setf window-max-size)`, `:min-size`, `:max-size` | done | "a window keeps the minimum and maximum sizes it is given" |
 | resizable, decorations | `:style`, `window-resizable-p`, `window-decorated-p` | done | "a window can be made fixed in size", "a window without decorations has no title bar" |
 | always on top | `(setf window-level)` `:floating` | done | "a window can be kept on top" |
 | minimize, maximize | `minimize-window`, `restore-window`, `(setf window-maximized-p)` | done | "a window can be minimized and restored", "a window can be maximized and brought back" |
