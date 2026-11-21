@@ -55,7 +55,8 @@ once: what WebKit cannot show is downloaded."
   "WebKit's content process for WEBVIEW died (it crashed, or the system
 reclaimed it): call :ON-WEB-PROCESS-TERMINATED, or reload by default."
   (multiple-value-bind (value handled)
-      (call-handler webview :on-web-process-terminated "on-web-process-terminated" webview)
+      (call-handler webview :on-web-process-terminated "on-web-process-terminated"
+                    (find-webview webview))
     (declare (ignore value))
     (unless (route webview :on-web-process-terminated)
       (send webview "reload" :pointer))
@@ -79,6 +80,6 @@ Objective-C exception, so this is called exactly once per OBSERVE-TITLE."
 
 (defun observed-change (key-path object)
   (when (and (string= "title" (lisp-string key-path))
-             (gethash (cffi:pointer-address object) *routes*))
+             (find-webview object))
     (call-handler object :on-title-change "on-title-change"
                   (objc->lisp (send object "title")))))

@@ -136,6 +136,14 @@ proxy -- with what RESPOND returns for its request line; return the port."
              :url "iris://app/index.html"))
       (check "a page served from Lisp posts a message back"
              (wait-until (lambda () (received "ready:iris://app/index.html"))))
+      (check "a webview is a WEBVIEW object that prints its URL"
+             (and (typep webview 'webview)
+                  (search "iris://app/index.html" (prin1-to-string webview))))
+      (check "webview-pointer is the WKWebView, find-webview maps it back, and it knows its window"
+             (and (cffi:pointerp (webview-pointer webview))
+                  (eq webview (find-webview (webview-pointer webview)))
+                  (eq window (webview-window webview))
+                  (member webview (webviews))))
       (check "eval-js returns strings"
              (equal "iris" (eval-js webview "document.title")))
       (check "eval-js returns numbers"
@@ -573,7 +581,7 @@ proxy -- with what RESPOND returns for its request line; return the port."
                      :callback (lambda (value message) (setf outcome (list value message))))
             (kill other)
             (check "on-web-process-terminated hears the content process die"
-                   (wait-until (lambda () (and terminated (cffi:pointer-eq terminated other)))))
+                   (wait-until (lambda () (and terminated (eq terminated other)))))
             (check "an eval-js pending when the process dies ends with an error"
                    (wait-until (lambda () (and outcome (second outcome)))))
             (destroy-webview other))

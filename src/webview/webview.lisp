@@ -27,7 +27,8 @@ height) in points from the top-left corner of the content area."
             (height (if (or (cffi:null-pointer-p superview)
                             ;; Filling the window: its frame is the content area.
                             (and (not (cffi:null-pointer-p window))
-                                 (cffi:pointer-eq webview (send window "contentView"))))
+                                 (cffi:pointer-eq (objc-pointer webview)
+                                                  (send window "contentView"))))
                         (+ (rect-y frame) (rect-height frame))
                         (rect-height (send superview "bounds" (:struct ns-rect))))))
        (list (rect-x frame)
@@ -42,7 +43,7 @@ height) in points from the top-left corner of the content area."
      (let ((superview (send webview "superview")))
        (when (cffi:null-pointer-p superview)
          (error "This webview is not in a window."))
-       (when (cffi:pointer-eq webview (send (send webview "window") "contentView"))
+       (when (cffi:pointer-eq (objc-pointer webview) (send (send webview "window") "contentView"))
          (error "This webview fills its window; make it with :BOUNDS to place it."))
        (send webview "setFrame:" (:struct ns-rect) (view-frame superview bounds) :void))))
   bounds)
@@ -237,8 +238,10 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
       ;; Our own reference to the delegate stays until DESTROY-WEBVIEW: the
       ;; webview holds it only weakly, and the title observation must outlive
       ;; the handlers that otherwise keep it.
-      (setf (gethash (cffi:pointer-address webview) *routes*)
-            (list* :delegate delegate options))
+      (setf (gethash (objc-address webview) *routes*)
+            (make-instance 'webview :pointer webview
+                                    :window (find-window window)
+                                    :options (list* :delegate delegate options)))
       (apply-view-options webview options)
       (cond (bounds
              ;; Keep the same distance from the top as the window resizes.
@@ -247,7 +250,7 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
             (t (send window "setContentView:" :pointer webview :void)))
       (when (getf options :focused)
         (send window "makeFirstResponder:" :pointer webview :bool))
-      webview)))
+      (find-webview webview))))
 
 (defun ns-url (url)
   "An NSURL for the absolute URL string URL, or an error."
@@ -294,7 +297,7 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
        (stop-observing-title webview delegate)
        (send webview "setNavigationDelegate:" :pointer (cffi:null-pointer) :void)
        (send webview "setUIDelegate:" :pointer (cffi:null-pointer) :void)
-       (remhash (cffi:pointer-address webview) *routes*)
+       (remhash (objc-address webview) *routes*)
        (release delegate))
      (let ((controller (send (send webview "configuration") "userContentController")))
        (send controller "removeScriptMessageHandlerForName:"

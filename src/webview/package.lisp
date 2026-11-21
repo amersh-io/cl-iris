@@ -7,7 +7,12 @@
 
 (defpackage #:cl-iris/webview
   (:use #:cl #:cl-iris/objc #:cl-iris/window)
-  (:export #:make-webview
+  (:export #:webview
+           #:webview-pointer
+           #:webview-window
+           #:find-webview
+           #:webviews
+           #:make-webview
            #:destroy-webview
            #:load-url
            #:load-html

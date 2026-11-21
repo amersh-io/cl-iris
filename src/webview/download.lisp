@@ -48,7 +48,7 @@ cancels the download."
     (remhash (cffi:pointer-address download) *downloads*)
     (when entry
       (destructuring-bind (webview . url) entry
-        (when (gethash (cffi:pointer-address webview) *routes*)
+        (when (find-webview webview)
           (call-handler webview :on-download "on-download" event url detail))))))
 
 (defun download-finished (download)

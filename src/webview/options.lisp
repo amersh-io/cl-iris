@@ -248,8 +248,7 @@ from every other webview, and forgets them when it goes."
   (on-main (lambda () (send webview "acceptsFirstMouse:" :pointer (cffi:null-pointer) :bool))))
 
 (defun (setf webview-accepts-first-mouse-p) (accept webview)
-  (on-main (lambda () (setf (getf (gethash (cffi:pointer-address webview) *routes*)
-                                  :accept-first-mouse)
+  (on-main (lambda () (setf (getf (webview-options (find-webview webview)) :accept-first-mouse)
                             (and accept t))))
   accept)
 
