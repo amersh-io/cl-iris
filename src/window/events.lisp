@@ -18,6 +18,19 @@
 (defun window-record (window)
   (gethash (cffi:pointer-address window) *windows*))
 
+(define-condition window-closed (error)
+  ((window :initarg :window :reader window-closed-window))
+  (:report "The window has been closed with CLOSE-WINDOW and can no longer be used."))
+
+(defun on-window (window function)
+  "Run FUNCTION on the main thread, as ON-MAIN does, after checking that
+WINDOW was made by MAKE-WINDOW and not yet released by CLOSE-WINDOW: a
+message to a released window would crash the process."
+  (on-main (lambda ()
+             (unless (window-record window)
+               (error 'window-closed :window window))
+             (funcall function))))
+
 (defun notify (window event &rest arguments)
   "Call WINDOW's event handler, if it has one, with EVENT and ARGUMENTS."
   (let* ((record (window-record window))
@@ -97,7 +110,7 @@ the event and its arguments:
 
 HANDLER may be a symbol, called through its current definition. NIL stops
 the calls."
-  (on-main (lambda () (setf (window-record-on-event (window-record window)) handler)))
+  (on-window window (lambda () (setf (window-record-on-event (window-record window)) handler)))
   handler)
 
 (defun window-close-request-handler (window)
@@ -108,7 +121,7 @@ the calls."
   "When the user asks to close WINDOW (its close button, Cmd+W), call
 HANDLER on the main thread with the window; the window closes only if it
 returns true. NIL lets every request through."
-  (on-main (lambda () (setf (window-record-on-close-request (window-record window)) handler)))
+  (on-window window (lambda () (setf (window-record-on-close-request (window-record window)) handler)))
   handler)
 
 (defun window-closed-p (window)

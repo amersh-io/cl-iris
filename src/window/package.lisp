@@ -59,6 +59,7 @@
            #:window-event-handler
            #:window-close-request-handler
            #:window-closed-p
+           #:window-closed
            #:run-after
            #:run-every
            #:cancel-timer

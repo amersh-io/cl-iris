@@ -419,7 +419,15 @@ replaces it."
     (check "close-window reports :closed"
            closed)
     (check "a window closed by close-window counts as closed"
-           (window-closed-p window))))
+           (window-closed-p window))
+    (check "a released window is refused instead of crashing the process"
+           (every (lambda (f)
+                    (handler-case (progn (funcall f window) nil)
+                      (window-closed () t)))
+                  (list #'window-title #'window-number #'window-frame
+                        #'show-window #'window-scale-factor
+                        (lambda (w) (setf (window-alpha w) 0.5))
+                        (lambda (w) (setf (window-event-handler w) nil)))))))
 
 (defun application-tests (checks &key (timeout 60))
   "Call each of CHECKS on a worker thread while this, the main thread, runs the

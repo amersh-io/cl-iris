@@ -28,7 +28,7 @@ height) — the visible frame leaves out the menu bar and the Dock — and
 
 (defun window-screen (window)
   "The screen WINDOW is mostly on, as a plist, or NIL when it is off screen."
-  (on-main
+  (on-window window
    (lambda ()
      (let ((screen (send window "screen")))
        (unless (cffi:null-pointer-p screen)
@@ -36,4 +36,4 @@ height) — the visible frame leaves out the menu bar and the Dock — and
 
 (defun window-scale-factor (window)
   "How many pixels WINDOW draws per point: 2 on a Retina display."
-  (on-main (lambda () (send window "backingScaleFactor" :double))))
+  (on-window window (lambda () (send window "backingScaleFactor" :double))))

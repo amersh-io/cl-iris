@@ -85,14 +85,14 @@ window twice does nothing the second time."
 
 (defun window-number (window)
   "The window server's number for WINDOW, as used by screencapture -l."
-  (on-main (lambda () (send window "windowNumber" :long))))
+  (on-window window (lambda () (send window "windowNumber" :long))))
 
 (defun window-title (window)
-  (on-main (lambda () (lisp-string (send window "title")))))
+  (on-window window (lambda () (lisp-string (send window "title")))))
 
 (defun window-content-size (window)
   "Return the width and height of WINDOW's content area, in points."
-  (on-main
+  (on-window window
    (lambda ()
      (let ((frame (send (send window "contentView") "frame" (:struct ns-rect))))
        (values (rect-width frame) (rect-height frame))))))

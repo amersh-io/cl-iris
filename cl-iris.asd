@@ -42,8 +42,8 @@
                (:file "menu")
                (:file "application")
                (:file "color")
-               (:file "attributes")
                (:file "events")
+               (:file "attributes")
                (:file "window")
                (:file "screens")))
 
