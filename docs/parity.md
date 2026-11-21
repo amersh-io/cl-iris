@@ -80,20 +80,32 @@ Status: **done** (with the test that covers it), **planned**, or
 | `EventLoopProxy` (send work to the loop) | `on-main` | done | "on-main returns every value" |
 | exit the loop | `stop-application` | done | every application test |
 | create a window | `make-window` | done | "a window gets a window number" |
-| title | `window-title`, `(setf window-title)` | planned | getter done: "a window keeps its title" |
-| inner size | `window-content-size`, setter | planned | getter done: "a window has the content size asked for" |
-| min and max size | `:min-size`, `:max-size` | planned | |
-| position, center | `window-position`, `center-window` | planned | |
-| resizable, decorations | `:resizable`, `:style` | planned | |
-| always on top | `:level` | planned | |
-| minimize, maximize, fullscreen | `minimize-window`, `zoom-window`, `(setf window-fullscreen-p)` | planned | |
-| visible, focus | `show-window`, `hide-window`, `focus-window` | planned | |
-| transparent window, background color | `:transparent`, `:background-color` | planned | |
-| theme (light/dark) | `(setf window-appearance)` | planned | |
-| window events: close requested, resized, moved, focused, destroyed | `:on-close-request` and friends | planned | |
-| application menu | `set-menu-bar` | planned | |
-| monitors, scale factor | `screens`, `window-scale-factor` | planned | |
-| timers | `on-main :after` | planned | |
+| title | `window-title`, `(setf window-title)` | done | "a window's title can be changed" |
+| inner size | `window-content-size`, `resize-window` | done | "a window can be resized" |
+| outer size and position | `window-frame`, `window-position`, `move-window` | done | "a window can be moved", "the frame includes the title bar" |
+| center | `center-window`, `make-window :center` | done | "centering moves a window into the middle of its screen" |
+| min and max size | `set-window-min-size`, `set-window-max-size`, `:min-size`, `:max-size` | done | "a window keeps the minimum and maximum sizes it is given" |
+| resizable, decorations | `:style`, `window-resizable-p`, `window-decorated-p` | done | "a window can be made fixed in size", "a window without decorations has no title bar" |
+| always on top | `(setf window-level)` `:floating` | done | "a window can be kept on top" |
+| minimize, maximize | `minimize-window`, `restore-window`, `(setf window-maximized-p)` | done | "a window can be minimized and restored", "a window can be maximized and brought back" |
+| fullscreen | `(setf window-fullscreen-p)` | done | "a new window is not in full screen"; entering it is not exercised, since it takes over a Space |
+| visible, focus | `show-window`, `hide-window`, `focus-window` | done | "a hidden window is not visible", "focusing a window brings it in front of the application's others" |
+| transparent window, background color | `window-transparent-p`, `window-background-color`, `window-alpha` | done | "a window can be made transparent", "a window's background color can be set and read back" |
+| theme (light/dark) | `(setf window-appearance)`, `system-appearance`, `theme-change-handler` | done | "a window can be drawn dark or light", "a change of the system's appearance is reported" |
+| title bar options | `window-title-visible-p`, `window-titlebar-transparent-p`, `:full-size-content-view` | done | "the title bar can be made transparent over full-size content" |
+| shadow, click-through | `window-shadow-p`, `window-ignores-mouse-p` | done | "a window's shadow can be turned off and on", "a window can let mouse events pass through" |
+| content protection | `window-content-protected-p` | done | "a window's content can be kept out of screen captures" |
+| visible on all workspaces | `window-on-all-spaces-p` | done | "a window can be shown on every Space" |
+| window builder | `make-window` keywords | done | "make-window applies every option it is given" |
+| window events: close requested, resized, moved, focused, minimized, closed | `window-event-handler`, `window-close-request-handler` | done | "resizing a window reports :resized with the new size", "a close request the handler refuses leaves the window open" |
+| using a closed window | `window-closed` condition | done | "a released window is refused instead of crashing the process" |
+| quit requests (Cmd+Q, Dock) | `run-application :on-quit-request`, `quit-application` | done | "a refused quit request keeps the loop running", "an accepted quit request stops the loop" |
+| reopen, last window closed | `:on-reopen`, `:quit-on-last-window-closed` | done | "reopening calls the handler with whether a window is visible" |
+| application menu | `set-menu-bar`, `default-menu-bar` | done | "choosing a menu item calls its Lisp action", "the default menu bar has an Edit menu for copy and paste" |
+| monitors, scale factor | `screens`, `window-screen`, `window-scale-factor` | done | "there is at least one screen, described in full", "a window knows its screen and scale factor" |
+| timers | `run-after`, `run-every`, `cancel-timer` | done | "run-after calls its function once on the main thread, later", "run-every fires repeatedly until cancelled" |
+| Dock badge, user attention | `dock-badge`, `request-user-attention` | done | "the Dock icon can carry a badge" |
+| hide the application | `hide-application`, `unhide-application` | done | "hiding the application hides its windows" |
 | cursor, raw keyboard and mouse events | — | out of scope | input belongs to the webview |
 | window and dock icons | — | out of scope | set by the `.app` bundle |
 
@@ -101,7 +113,7 @@ Status: **done** (with the test that covers it), **planned**, or
 
 | Need | cl-iris | Status | Test / reason |
 |---|---|---|---|
-| Cmd+C / Cmd+V / Cmd+A / undo in the webview | a default Edit menu | planned | |
+| Cmd+C / Cmd+V / Cmd+A / undo in the webview | a default Edit menu | done | "the default menu bar has an Edit menu for copy and paste" |
 | `alert`, `confirm`, `prompt` | WKUIDelegate panels | planned | |
 | links with `target=_blank` | routed to `:on-new-window` or opened in place | planned | |
 | `<input type=file>` | open panel | planned | |
