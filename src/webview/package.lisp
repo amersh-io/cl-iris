@@ -34,6 +34,9 @@
            #:webview-focused-p
            #:focus-parent
            #:webview-zoom
+           #:cookies
+           #:set-cookie
+           #:delete-cookie
            #:eval-js
            #:javascript-error
            #:request

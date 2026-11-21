@@ -68,7 +68,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `focus` | `focus-webview`, `webview-focused-p` | done | "focus moves between webviews" |
 | `focus_parent` | `focus-parent` | done | "focus-parent hands the focus back to the window" |
 | `print` | `print-webview` | planned | |
-| `cookies`, `cookies_for_url`, `set_cookie`, `delete_cookie` | `cookies`, `set-cookie`, `delete-cookie` | planned | |
+| `cookies`, `cookies_for_url`, `set_cookie`, `delete_cookie` | `cookies` (`:url`), `set-cookie`, `delete-cookie` | done | "set-cookie stores a cookie that cookies lists", "cookies for a URL are those it would be sent", "delete-cookie removes a cookie" |
 | `clear_all_browsing_data` | `clear-browsing-data` | planned | |
 | `open_devtools`, `close_devtools`, `is_devtools_open` | — | out of scope | needs private WebKit API; `:devtools` enables the inspector from the context menu |
 | `id` | — | out of scope | see `with_id` |

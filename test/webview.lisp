@@ -697,6 +697,27 @@ small page; return the port."
                    (prog1 (eql 0 (decide plain 0))
                      (destroy-webview plain)))))
         (destroy-webview other))
+      (let ((other (make-webview window :incognito t :html "<title>jar</title>"
+                                        :base-url "https://cl-iris.test/")))
+        (flet ((named (name list) (find name list :key (lambda (c) (getf c :name)) :test #'equal)))
+          (check "set-cookie stores a cookie that cookies lists"
+                 (progn (set-cookie other :name "flavor" :value "oat" :domain "cl-iris.test"
+                                          :expires (+ (get-universal-time) 3600) :secure t)
+                        (let ((cookie (named "flavor" (cookies other))))
+                          (and cookie (equal "oat" (getf cookie :value)) (getf cookie :secure)
+                               (integerp (getf cookie :expires))))))
+          (check "cookies for a URL are those it would be sent"
+                 (and (named "flavor" (cookies other :url "https://www.cl-iris.test/x"))
+                      (not (named "flavor" (cookies other :url "http://cl-iris.test/")))
+                      (not (named "flavor" (cookies other :url "https://elsewhere.test/")))))
+          (check "a page's own cookies are listed"
+                 (progn (wait-until (lambda () (equal "jar" (eval-js other "document.title"))))
+                        (eval-js other "document.cookie = 'fromPage=1; path=/'; 0")
+                        (wait-until (lambda () (named "fromPage" (cookies other))))))
+          (check "delete-cookie removes a cookie"
+                 (progn (delete-cookie other (named "flavor" (cookies other)))
+                        (not (named "flavor" (cookies other))))))
+        (destroy-webview other))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"
