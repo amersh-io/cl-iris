@@ -22,6 +22,7 @@
            #:webview-background-throttling
            #:webview-proxy-count
            #:webview-accepts-first-mouse-p
+           #:webview-bounds
            #:eval-js
            #:javascript-error
            #:request

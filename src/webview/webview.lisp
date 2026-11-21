@@ -4,11 +4,56 @@
 
 ;;; Webviews
 
+;;; Bounds are given from the top-left corner of the window's content area,
+;;; as on the web; Cocoa counts from the bottom-left.
+
+(defconstant +view-min-y-margin+ 8)
+
+(defun view-frame (container bounds)
+  "The frame, in CONTAINER's coordinates, of BOUNDS: (x y width height) from
+CONTAINER's top-left corner."
+  (destructuring-bind (x y width height) bounds
+    (let ((container-height (rect-height (send container "bounds" (:struct ns-rect)))))
+      (make-rect x (- container-height y height) width height))))
+
+(defun webview-bounds (webview)
+  "WEBVIEW's position and size within its window, as a list (x y width
+height) in points from the top-left corner of the content area."
+  (on-main
+   (lambda ()
+     (let* ((frame (send webview "frame" (:struct ns-rect)))
+            (superview (send webview "superview"))
+            (window (send webview "window"))
+            (height (if (or (cffi:null-pointer-p superview)
+                            ;; Filling the window: its frame is the content area.
+                            (and (not (cffi:null-pointer-p window))
+                                 (cffi:pointer-eq webview (send window "contentView"))))
+                        (+ (rect-y frame) (rect-height frame))
+                        (rect-height (send superview "bounds" (:struct ns-rect))))))
+       (list (rect-x frame)
+             (- height (rect-y frame) (rect-height frame))
+             (rect-width frame)
+             (rect-height frame))))))
+
+(defun (setf webview-bounds) (bounds webview)
+  "Move and resize WEBVIEW within its window; see WEBVIEW-BOUNDS."
+  (on-main
+   (lambda ()
+     (let ((superview (send webview "superview")))
+       (when (cffi:null-pointer-p superview)
+         (error "This webview is not in a window."))
+       (when (cffi:pointer-eq webview (send (send webview "window") "contentView"))
+         (error "This webview fills its window; make it with :BOUNDS to place it."))
+       (send webview "setFrame:" (:struct ns-rect) (view-frame superview bounds) :void))))
+  bounds)
+
 (defun make-webview (window &rest options
                      &key on-message (scheme "iris") on-request protocols url headers html
                        (base-url "about:blank")
                      &allow-other-keys)
-  "Fill WINDOW with a new WKWebView and return it.
+  "Fill WINDOW with a new WKWebView and return it -- or, with BOUNDS, a list
+(x y width height) in points from the top-left corner of the window's content
+area, place it there, beside any other webviews in WINDOW.
 
 ON-MESSAGE is called on the main thread with each value a page posts with
 iris.post(value) (or window.webkit.messageHandlers.iris.postMessage),
@@ -128,18 +173,25 @@ on. SCRIPT is a string, run in every frame, or (STRING :MAIN-FRAME-ONLY T)."
           do (send configuration "setURLSchemeHandler:forURLScheme:"
                    :pointer delegate :pointer (ns-string scheme) :void))
     (configure configuration options)
-    (let ((webview (send (send (webview-class) "alloc")
-                         "initWithFrame:configuration:"
-                         (:struct ns-rect)
-                         (send (send window "contentView") "frame"
-                               (:struct ns-rect))
-                         :pointer configuration)))
+    (let* ((content (send window "contentView"))
+           (bounds (getf options :bounds))
+           (webview (send (send (webview-class) "alloc")
+                          "initWithFrame:configuration:"
+                          (:struct ns-rect)
+                          (if bounds
+                              (view-frame content bounds)
+                              (send content "frame" (:struct ns-rect)))
+                          :pointer configuration)))
       ;; The configuration and its user content controller retain what they need.
       (release configuration)
       (release delegate)
       (setf (gethash (cffi:pointer-address webview) *routes*) options)
       (apply-view-options webview options)
-      (send window "setContentView:" :pointer webview :void)
+      (cond (bounds
+             ;; Keep the same distance from the top as the window resizes.
+             (send webview "setAutoresizingMask:" :unsigned-long +view-min-y-margin+ :void)
+             (send content "addSubview:" :pointer webview :void))
+            (t (send window "setContentView:" :pointer webview :void)))
       webview)))
 
 (defun ns-url (url)

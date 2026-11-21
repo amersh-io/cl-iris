@@ -426,6 +426,29 @@ small page; return the port."
       (check "webviews are made from our WKWebView subclass"
              (on-main (lambda () (and (kind-of-p webview "WKWebView")
                                       (kind-of-p webview "CLIrisWebView")))))
+      (let* ((panes (make-window :title "cl-iris panes" :width 600 :height 400 :activate nil))
+             (left (make-webview panes :bounds '(0 0 200 400) :html "<title>left</title>"))
+             (right (make-webview panes :bounds '(200 50 400 300) :html "<title>right</title>")))
+        (check "several webviews share one window, each in its bounds"
+               (and (equal '(0d0 0d0 200d0 400d0) (webview-bounds left))
+                    (equal '(200d0 50d0 400d0 300d0) (webview-bounds right))
+                    (wait-until (lambda () (and (equal "left" (eval-js left "document.title"))
+                                                (equal "right" (eval-js right "document.title")))))
+                    (eql 400 (eval-js right "window.innerWidth"))))
+        (check "a webview can be moved and resized"
+               (progn (setf (webview-bounds right) '(250 0 300 200))
+                      (and (equal '(250d0 0d0 300d0 200d0) (webview-bounds right))
+                           (wait-until (lambda () (eql 300 (eval-js right "window.innerWidth")))))))
+        (destroy-webview left)
+        (destroy-webview right)
+        (close-window panes))
+      (check "a webview without bounds fills its window"
+             (let ((other (make-webview window)))
+               (prog1 (and (multiple-value-bind (width height) (window-content-size window)
+                             (equal (list 0d0 0d0 width height) (webview-bounds other)))
+                           (handler-case (progn (setf (webview-bounds other) '(0 0 10 10)) nil)
+                             (error (e) (search ":BOUNDS" (princ-to-string e)))))
+                 (destroy-webview other))))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

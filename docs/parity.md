@@ -37,7 +37,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_background_color` | `:background-color` | planned | |
 | `with_visible` | `:visible` | done | "a webview can start hidden and keep running its page" |
 | `with_focused` | `:focused` | planned | |
-| `with_bounds` | `:bounds` (child webview inside a window) | planned | |
+| `with_bounds` | `:bounds` (child webview inside a window) | done | "several webviews share one window, each in its bounds" |
 | `with_autoplay` | `:autoplay` | done | "autoplay lets media start without a gesture" |
 | `with_incognito` | `:incognito` (non-persistent data store) | done | "incognito webviews do not share storage" |
 | `with_javascript_disabled` | `:javascript nil` | done | "with javascript off, the page's scripts do not run" |
@@ -63,7 +63,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `can_go_back`, `can_go_forward` | `can-go-back-p`, `can-go-forward-p` | planned | |
 | `zoom` | `(setf webview-zoom)` | planned | |
 | `set_background_color` | `(setf webview-background-color)` | planned | |
-| `bounds`, `set_bounds` | `webview-bounds`, `(setf webview-bounds)` | planned | |
+| `bounds`, `set_bounds` | `webview-bounds`, `(setf webview-bounds)` | done | "a webview can be moved and resized" |
 | `set_visible` | `(setf webview-visible-p)` | done | "a hidden webview can be shown" |
 | `focus`, `focus_parent` | `focus-webview`, `focus-window` | planned | |
 | `print` | `print-webview` | planned | |
