@@ -14,6 +14,7 @@
            #:add-init-script
            #:webview-user-agent
            #:webview-devtools-p
+           #:webview-navigation-gestures-p
            #:eval-js
            #:javascript-error
            #:request

@@ -41,7 +41,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_autoplay` | `:autoplay` | planned | |
 | `with_incognito` | `:incognito` (non-persistent data store) | planned | |
 | `with_javascript_disabled` | `:javascript nil` | planned | |
-| `with_back_forward_navigation_gestures` | `:navigation-gestures` | planned | |
+| `with_back_forward_navigation_gestures` | `:navigation-gestures`, `(setf webview-navigation-gestures-p)` | done | "navigation gestures can be switched on and off" |
 | `with_accept_first_mouse` | `:accept-first-mouse` | planned | |
 | `with_background_throttling` | `:background-throttling` (macOS 14+) | planned | |
 | `with_proxy_config` | `:proxy` (macOS 14+) | planned | |

@@ -293,6 +293,12 @@
                (progn (setf (webview-devtools-p other) nil)
                       (not (webview-devtools-p other))))
         (destroy-webview other))
+      (let ((other (make-webview window :navigation-gestures t)))
+        (check "navigation gestures can be switched on and off"
+               (and (webview-navigation-gestures-p other)
+                    (progn (setf (webview-navigation-gestures-p other) nil)
+                           (not (webview-navigation-gestures-p other)))))
+        (destroy-webview other))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

@@ -73,3 +73,8 @@ or Inspect Element in its context menu).")
            :pointer (if user-agent (ns-string user-agent) (cffi:null-pointer))
            :void)))
   user-agent)
+
+(define-webview-flag webview-navigation-gestures-p
+    "allowsBackForwardNavigationGestures" "setAllowsBackForwardNavigationGestures:"
+    :navigation-gestures
+  "True if horizontal swipes on WEBVIEW go back and forward in its history.")
