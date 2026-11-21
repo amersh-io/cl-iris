@@ -338,6 +338,12 @@
                            (equal :null (eval-js other-private "localStorage.getItem('k')")))))
         (destroy-webview private)
         (destroy-webview other-private))
+      (let ((other (make-webview window :javascript nil
+                                        :html "<title>static</title><script>document.title = 'scripted'</script>")))
+        (check "with javascript off, the page's scripts do not run"
+               (and (wait-until (lambda () (equal "static" (eval-js other "document.title"))))
+                    (progn (sleep 0.2) (equal "static" (eval-js other "document.title")))))
+        (destroy-webview other))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

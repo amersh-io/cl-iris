@@ -40,7 +40,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | `with_bounds` | `:bounds` (child webview inside a window) | planned | |
 | `with_autoplay` | `:autoplay` | done | "autoplay lets media start without a gesture" |
 | `with_incognito` | `:incognito` (non-persistent data store) | done | "incognito webviews do not share storage" |
-| `with_javascript_disabled` | `:javascript nil` | planned | |
+| `with_javascript_disabled` | `:javascript nil` | done | "with javascript off, the page's scripts do not run" |
 | `with_back_forward_navigation_gestures` | `:navigation-gestures`, `(setf webview-navigation-gestures-p)` | done | "navigation gestures can be switched on and off" |
 | `with_accept_first_mouse` | `:accept-first-mouse` | planned | |
 | `with_background_throttling` | `:background-throttling` (macOS 14+) | planned | |

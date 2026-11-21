@@ -167,3 +167,9 @@ from every other webview, and forgets them when it goes."
   (on-main
    (lambda ()
      (not (send (send (configuration webview) "websiteDataStore") "isPersistent" :bool)))))
+
+;;; Scripts
+
+(define-configuration-option :javascript (configuration enabled)
+  (send (send configuration "defaultWebpagePreferences")
+        "setAllowsContentJavaScript:" :bool (and enabled t) :void))
