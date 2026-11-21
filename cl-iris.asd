@@ -12,8 +12,14 @@
   :description "A thin CFFI binding to the Objective-C runtime."
   :license "Apache-2.0"
   :depends-on ("cffi")
-  :pathname "src/"
-  :components ((:file "objc")))
+  :pathname "src/objc/"
+  :serial t
+  :components ((:file "package")
+               (:file "runtime")
+               (:file "messaging")
+               (:file "strings")
+               (:file "pool")
+               (:file "classes")))
 
 (defsystem "cl-iris/window"
   :description "The NSApplication loop on the main thread, NSWindow, and GCD."
