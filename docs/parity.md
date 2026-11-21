@@ -115,7 +115,7 @@ Status: **done** (with the test that covers it), **planned**, or
 | Need | cl-iris | Status | Test / reason |
 |---|---|---|---|
 | Cmd+C / Cmd+V / Cmd+A / undo in the webview | a default Edit menu | done | "the default menu bar has an Edit menu for copy and paste" |
-| `alert`, `confirm`, `prompt` | WKUIDelegate panels | planned | |
+| `alert`, `confirm`, `prompt` | `:on-dialog`, else sheets on the window | done | "on-dialog answers confirm()", "without on-dialog, confirm() shows a sheet and hears its answer" |
 | links with `target=_blank` | routed to `:on-new-window`, else opened in place | done | "a target=_blank link opens in place by default" |
 | `<input type=file>` | open panel | planned | |
 | web content process crash | `:on-web-process-terminated`, else reload | done | "on-web-process-terminated hears the content process die", "without a handler, a webview whose process died reloads", "an eval-js pending when the process dies ends with an error" |

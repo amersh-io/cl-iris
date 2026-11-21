@@ -49,6 +49,19 @@
       (self (webview :pointer) (configuration :pointer) (action :pointer) (features :pointer))
     (declare (ignore configuration features))
     (new-window-request webview action))
+  (:method "webView:runJavaScriptAlertPanelWithMessage:initiatedByFrame:completionHandler:" :void
+      (self (webview :pointer) (message :pointer) (frame :pointer) (completion :pointer))
+    (declare (ignore frame))
+    (alert-panel webview message completion))
+  (:method "webView:runJavaScriptConfirmPanelWithMessage:initiatedByFrame:completionHandler:" :void
+      (self (webview :pointer) (message :pointer) (frame :pointer) (completion :pointer))
+    (declare (ignore frame))
+    (confirm-panel webview message completion))
+  (:method "webView:runJavaScriptTextInputPanelWithPrompt:defaultText:initiatedByFrame:completionHandler:" :void
+      (self (webview :pointer) (prompt :pointer) (default :pointer) (frame :pointer)
+            (completion :pointer))
+    (declare (ignore frame))
+    (prompt-panel webview prompt default completion))
   (:method "webViewWebContentProcessDidTerminate:" :void (self (webview :pointer))
     (web-process-terminated webview))
   (:method "webView:didFailNavigation:withError:" :void

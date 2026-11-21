@@ -603,6 +603,46 @@ small page; return the port."
                              (wait-until (lambda () (equal "blank://three/" asked))))
                       (progn (sleep 0.2) (equal "blank://one/" (webview-url other)))))
           (destroy-webview other)))
+      (let* ((seen '())
+             (other (make-webview window
+                                  :html "<title>panels</title>"
+                                  :on-dialog (lambda (kind message &optional default)
+                                               (push (list kind message default) seen)
+                                               (case kind
+                                                 (:confirm (equal message "yes?"))
+                                                 (:prompt (concatenate 'string default "!")))))))
+        (wait-until (lambda () (equal "panels" (eval-js other "document.title"))))
+        (check "on-dialog hears alert()"
+               (progn (eval-js other "alert('hello'); 0")
+                      (equal '(:alert "hello" nil) (first seen))))
+        (check "on-dialog answers confirm()"
+               (and (eq t (eval-js other "confirm('yes?')"))
+                    (null (eval-js other "confirm('no?')"))))
+        (check "on-dialog answers prompt() with text"
+               (equal "abc!" (eval-js other "prompt('name?', 'abc')")))
+        (destroy-webview other))
+      (let ((other (make-webview window :html "<title>sheets</title>")))
+        (flet ((sheet () (on-main (lambda () (let ((s (send window "attachedSheet")))
+                                               (unless (cffi:null-pointer-p s) s)))))
+               (dismiss (sheet code)
+                 (on-main (lambda () (send window "endSheet:returnCode:"
+                                           :pointer sheet :long code :void)))))
+          (wait-until (lambda () (equal "sheets" (eval-js other "document.title"))))
+          (check "without on-dialog, confirm() shows a sheet and hears its answer"
+                 (progn
+                   (eval-js other "window.answer = confirm('sure?'); 0" :wait nil)
+                   (let ((s (wait-until #'sheet)))
+                     (and s
+                          (progn (dismiss s 1000)
+                                 (wait-until (lambda () (eq t (eval-js other "window.answer")))))))))
+          (check "cancelling a prompt sheet answers null"
+                 (progn
+                   (eval-js other "window.typed = prompt('name?', 'x'); 0" :wait nil)
+                   (let ((s (wait-until #'sheet)))
+                     (and s
+                          (progn (dismiss s 1001)
+                                 (wait-until (lambda () (eq :null (eval-js other "window.typed"))))))))))
+        (destroy-webview other))
       (check "webviews are not inspectable by default"
              (not (webview-devtools-p webview)))
       (check "a scheme WebKit handles itself is refused before WebKit sees it"

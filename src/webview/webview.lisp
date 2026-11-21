@@ -114,6 +114,10 @@ ON-NEW-WINDOW is called with the URL a page wants to open in a new window
 (window.open, target=_blank) and returns :HERE to load it in this webview,
 :BROWSER to open it in the default browser, or NIL to ignore it; without it,
 such links open here.
+ON-DIALOG answers alert(), confirm() and prompt(): it is called with :ALERT,
+:CONFIRM or :PROMPT, the message and, for :PROMPT, the default text, and
+returns whether to confirm, or the text to answer. Without it, they are
+shown as sheets on the window.
 ON-PAGE-LOAD is called with :STARTED or :FINISHED and the URL as a page
 loads, or with :FAILED, the URL and an error message.
 ON-TITLE-CHANGE is called with the document's title whenever it changes.
