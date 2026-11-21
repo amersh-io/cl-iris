@@ -49,3 +49,22 @@
     (let ((output (run-child-lisp "(asdf:load-system \"cl-iris\")" *last-window-script*)))
       (check "the user closing the last window ends a loop that quits on it"
              (search "STOPPED-BY-HAND NIL" output)))))
+
+;;; Objects outliving what they stand for. Objective-C reuses the address of a
+;;; released object, so a destroyed webview's or a closed window's Lisp object
+;;; can share its address with a newer one. Such a stale object is made here
+;;; directly, with the newer object's pointer, as reuse would leave it.
+
+(defun stale-object-checks ()
+  (with-window (window :title "stale" :width 200 :height 100 :activate nil)
+    (let* ((webview (make-webview window :html "<title>t</title>"))
+           (stale (make-instance 'webview :pointer (webview-pointer webview)
+                                          :window window)))
+      (unwind-protect
+           ;; Pinned: the stale object is taken for the live one.
+           (check "a stale webview object finds the newer webview at its address (pinned)"
+                  (eq webview (with-main-thread () (find-webview stale))))
+        (destroy-webview webview)))
+    (let ((stale (make-instance 'window :pointer (window-pointer window))))
+      (check "a stale window object finds the newer window at its address (pinned)"
+             (eq window (with-main-thread () (find-window stale)))))))

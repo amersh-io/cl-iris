@@ -17,7 +17,8 @@ signal an error if any of them fails."
   (with-application-checks)
   (example-checks)
   (lifecycle-checks)
-  (application-tests (list #'window-checks #'live-redefinition-checks #'webview-checks)
+  (application-tests (list #'window-checks #'live-redefinition-checks #'webview-checks
+                           #'stale-object-checks)
                      :timeout 300)
   (when *only*
     (format t "~&~D check~:P skipped: not matching ~S~%" *skipped* *only*))
