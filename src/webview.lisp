@@ -108,8 +108,10 @@ and 0); null becomes NIL; anything else becomes its description."
 
 (defun delegate-class ()
   (let ((class (ensure-class "CLIrisWebViewDelegate" "NSObject")))
-    (add-protocol class "WKScriptMessageHandler")
-    (add-protocol class "WKURLSchemeHandler")
+    ;; WebKit does not check conformance, and does not always register
+    ;; these protocols with the runtime.
+    (add-protocol class "WKScriptMessageHandler" :errorp nil)
+    (add-protocol class "WKURLSchemeHandler" :errorp nil)
     (set-method class "userContentController:didReceiveScriptMessage:"
                 (cffi:callback did-receive-script-message) "v@:@@")
     (set-method class "webView:startURLSchemeTask:"

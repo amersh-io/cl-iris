@@ -138,10 +138,16 @@ IMP receives the receiver and the selector before the method's own arguments."
   (%replace-method class (selector selector) imp types)
   class)
 
-(defun add-protocol (class name)
-  "Declare that CLASS conforms to the protocol NAME. Adding it twice is harmless."
+(defun add-protocol (class name &key (errorp t))
+  "Declare that CLASS conforms to the protocol NAME. Adding it twice is harmless.
+
+Some framework protocols are only declared in headers and never registered
+with the runtime (WebKit's WKScriptMessageHandler, for one); for those, pass
+ERRORP NIL to carry on without the declaration. Returns CLASS, or NIL when
+the protocol was not found."
   (let ((protocol (%get-protocol name)))
-    (when (cffi:null-pointer-p protocol)
-      (error "No Objective-C protocol named ~S." name))
-    (%add-protocol class protocol)
-    class))
+    (cond ((not (cffi:null-pointer-p protocol))
+           (%add-protocol class protocol)
+           class)
+          (errorp (error "No Objective-C protocol named ~S." name))
+          (t nil))))
