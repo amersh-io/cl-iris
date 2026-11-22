@@ -4,7 +4,7 @@ All notable changes to cl-iris are listed here. The project follows
 [Semantic Versioning](https://semver.org/); until 1.0, a minor release may
 change the API.
 
-## Unreleased
+## 0.2.0 — 2026-11-22
 
 ### Fixed
 

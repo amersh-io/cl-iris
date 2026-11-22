@@ -280,7 +280,7 @@ minor release may change the API. See [CHANGELOG.md](CHANGELOG.md). To
 depend on a release with qlot:
 
 ```
-git cl-iris https://github.com/amersh-io/cl-iris.git :tag v0.1.0
+git cl-iris https://github.com/amersh-io/cl-iris.git :tag v0.2.0
 ```
 
 ## License
